@@ -1,57 +1,56 @@
 <?php
 session_start();
-if(!isset($_SESSION['usuario_id']) || $_SESSION['usuario_rol'] !== 'admin') {
-    header('Location: ../auth/login.php'); exit;
+if (!isset($_SESSION['usuario_id']) || $_SESSION['usuario_rol'] !== 'admin') {
+    header('Location: ../auth/login.php');
+    exit;
 }
 require_once '../../config/db.php';
 
-// Procesar acciones
-if($_SERVER['REQUEST_METHOD'] === 'POST') {
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $accion = $_POST['accion'];
 
-    if($accion === 'crear' || $accion === 'editar') {
+    if ($accion === 'crear' || $accion === 'editar') {
         $nombre = trim($_POST['nombre']);
         $marca = trim($_POST['marca']);
         $desc = trim($_POST['descripcion']);
-        $precio = $_POST['precio'];
-        $stock = $_POST['stock'];
-        $id_cat = $_POST['id_categoria'];
+        $precio = floatval($_POST['precio']);
+        $stock = intval($_POST['stock']);
+        $id_cat = intval($_POST['id_categoria']);
         $estado = isset($_POST['estado']) ? 1 : 0;
         $imagen = '';
 
-        // Subir imagen
-        if(!empty($_FILES['imagen']['name'])) {
+        if (!empty($_FILES['imagen']['name'])) {
             $ext = pathinfo($_FILES['imagen']['name'], PATHINFO_EXTENSION);
             $imagen = 'img/' . uniqid() . '.' . $ext;
             move_uploaded_file($_FILES['imagen']['tmp_name'], '../../assets/' . $imagen);
         }
 
-        if($accion === 'crear') {
+        if ($accion === 'crear') {
             $stmt = $conn->prepare("INSERT INTO producto (id_categoria, nombre, marca, descripcion, precio, stock, imagen, estado) VALUES (?,?,?,?,?,?,?,?)");
-            $stmt->bind_param("isssdisd", $id_cat, $nombre, $marca, $desc, $precio, $stock, $imagen, $estado);
+            $stmt->bind_param("isssdisi", $id_cat, $nombre, $marca, $desc, $precio, $stock, $imagen, $estado);
             $stmt->execute();
         } else {
-            $id = $_POST['id_producto'];
-            if($imagen) {
+            $id = intval($_POST['id_producto']);
+            if ($imagen) {
                 $stmt = $conn->prepare("UPDATE producto SET id_categoria=?, nombre=?, marca=?, descripcion=?, precio=?, stock=?, imagen=?, estado=? WHERE id_producto=?");
-                $stmt->bind_param("isssdisd i", $id_cat, $nombre, $marca, $desc, $precio, $stock, $imagen, $estado, $id);
+                $stmt->bind_param("isssdisii", $id_cat, $nombre, $marca, $desc, $precio, $stock, $imagen, $estado, $id);
             } else {
                 $stmt = $conn->prepare("UPDATE producto SET id_categoria=?, nombre=?, marca=?, descripcion=?, precio=?, stock=?, estado=? WHERE id_producto=?");
-                $stmt->bind_param("isssdisi", $id_cat, $nombre, $marca, $desc, $precio, $stock, $estado, $id);
+                $stmt->bind_param("isssdiii", $id_cat, $nombre, $marca, $desc, $precio, $stock, $estado, $id);
             }
             $stmt->execute();
         }
     }
 
-    if($accion === 'eliminar') {
-        $id = $_POST['id_producto'];
-        $conn->prepare("DELETE FROM producto WHERE id_producto=?")->bind_param("i", $id);
+    if ($accion === 'eliminar') {
+        $id = intval($_POST['id_producto']);
         $stmt = $conn->prepare("DELETE FROM producto WHERE id_producto=?");
         $stmt->bind_param("i", $id);
         $stmt->execute();
     }
 
-    header('Location: productos.php'); exit;
+    header('Location: productos.php');
+    exit;
 }
 
 $productos = $conn->query("SELECT p.*, c.nombre_categoria FROM producto p JOIN categoria c ON p.id_categoria = c.id_categoria ORDER BY p.id_producto DESC");
@@ -90,6 +89,7 @@ $categorias = $conn->query("SELECT * FROM categoria ORDER BY nombre_categoria");
         .badge-stock-low { background: #2a1a0d; color: #ffa500; border: 1px solid #ffa500; border-radius: 6px; padding: 2px 8px; font-size: 0.75rem; }
         .badge-stock-out { background: #2a0d0d; color: #ff4444; border: 1px solid #ff4444; border-radius: 6px; padding: 2px 8px; font-size: 0.75rem; }
         .page-title { color: #00ff88; font-weight: 800; }
+        .alert-success-custom { background: #0d2a0d; border: 1px solid #00ff88; color: #00ff88; border-radius: 10px; padding: 12px 16px; }
     </style>
 </head>
 <body>
@@ -102,6 +102,7 @@ $categorias = $conn->query("SELECT * FROM categoria ORDER BY nombre_categoria");
             <a href="productos.php" class="nav-link active"><i class="bi bi-box"></i> Productos</a>
             <a href="categorias.php" class="nav-link"><i class="bi bi-tags"></i> Categorías</a>
             <a href="ventas.php" class="nav-link"><i class="bi bi-cart"></i> Ventas</a>
+            <a href="usuarios.php" class="nav-link"><i class="bi bi-people"></i> Usuarios</a>
             <form action="../../controllers/auth_controller.php" method="POST" class="d-inline">
                 <input type="hidden" name="action" value="logout">
                 <button class="btn btn-gamer btn-sm">Salir</button>
@@ -111,6 +112,12 @@ $categorias = $conn->query("SELECT * FROM categoria ORDER BY nombre_categoria");
 </nav>
 
 <div class="container-fluid px-4 mt-4">
+    <?php if(isset($_GET['ok'])): ?>
+    <div class="alert-success-custom mb-3"><i class="bi bi-check-circle me-2"></i>
+        <?= $_GET['ok'] === 'crear' ? 'Producto creado' : ($_GET['ok'] === 'editar' ? 'Producto actualizado' : 'Producto eliminado') ?> correctamente.
+    </div>
+    <?php endif; ?>
+
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h3 class="page-title mb-0"><i class="bi bi-box"></i> Gestión de Productos</h3>
         <button class="btn btn-gamer" data-bs-toggle="modal" data-bs-target="#modalCrear">
@@ -122,23 +129,16 @@ $categorias = $conn->query("SELECT * FROM categoria ORDER BY nombre_categoria");
         <table class="table mb-0">
             <thead>
                 <tr>
-                    <th>#</th>
-                    <th>Img</th>
-                    <th>Nombre</th>
-                    <th>Marca</th>
-                    <th>Categoría</th>
-                    <th>Precio</th>
-                    <th>Stock</th>
-                    <th>Estado</th>
-                    <th>Acciones</th>
+                    <th>#</th><th>Img</th><th>Nombre</th><th>Marca</th>
+                    <th>Categoría</th><th>Precio</th><th>Stock</th><th>Estado</th><th>Acciones</th>
                 </tr>
             </thead>
             <tbody>
-                <?php while($p = $productos->fetch_assoc()): ?>
+                <?php while ($p = $productos->fetch_assoc()): ?>
                 <tr>
                     <td class="text-muted"><?= $p['id_producto'] ?></td>
                     <td>
-                        <?php if($p['imagen']): ?>
+                        <?php if ($p['imagen']): ?>
                             <img src="../../assets/<?= $p['imagen'] ?>" class="producto-img">
                         <?php else: ?>
                             <div class="producto-img">📦</div>
@@ -149,16 +149,16 @@ $categorias = $conn->query("SELECT * FROM categoria ORDER BY nombre_categoria");
                     <td><span style="color:#00ff88;font-size:0.85rem;"><?= htmlspecialchars($p['nombre_categoria']) ?></span></td>
                     <td><strong class="text-success">Bs. <?= number_format($p['precio'], 2) ?></strong></td>
                     <td>
-                        <?php if($p['stock'] > 10): ?>
+                        <?php if ($p['stock'] > 10): ?>
                             <span class="badge-stock-ok"><?= $p['stock'] ?> und.</span>
-                        <?php elseif($p['stock'] > 0): ?>
+                        <?php elseif ($p['stock'] > 0): ?>
                             <span class="badge-stock-low"><?= $p['stock'] ?> und.</span>
                         <?php else: ?>
                             <span class="badge-stock-out">Agotado</span>
                         <?php endif; ?>
                     </td>
                     <td>
-                        <?php if($p['estado']): ?>
+                        <?php if ($p['estado']): ?>
                             <span class="badge bg-success">Activo</span>
                         <?php else: ?>
                             <span class="badge bg-secondary">Inactivo</span>
@@ -214,10 +214,7 @@ $categorias = $conn->query("SELECT * FROM categoria ORDER BY nombre_categoria");
                         <div class="col-md-4">
                             <label class="form-label">Categoría</label>
                             <select name="id_categoria" class="form-select" required>
-                                <?php
-                                $categorias->data_seek(0);
-                                while($c = $categorias->fetch_assoc()):
-                                ?>
+                                <?php $categorias->data_seek(0); while ($c = $categorias->fetch_assoc()): ?>
                                 <option value="<?= $c['id_categoria'] ?>"><?= $c['nombre_categoria'] ?></option>
                                 <?php endwhile; ?>
                             </select>
@@ -279,10 +276,7 @@ $categorias = $conn->query("SELECT * FROM categoria ORDER BY nombre_categoria");
                         <div class="col-md-4">
                             <label class="form-label">Categoría</label>
                             <select name="id_categoria" id="editCat" class="form-select">
-                                <?php
-                                $categorias->data_seek(0);
-                                while($c = $categorias->fetch_assoc()):
-                                ?>
+                                <?php $categorias->data_seek(0); while ($c = $categorias->fetch_assoc()): ?>
                                 <option value="<?= $c['id_categoria'] ?>"><?= $c['nombre_categoria'] ?></option>
                                 <?php endwhile; ?>
                             </select>
