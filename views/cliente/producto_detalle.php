@@ -14,7 +14,6 @@ $stmt->execute();
 $p = $stmt->get_result()->fetch_assoc();
 if(!$p) { header('Location: productos.php'); exit; }
 
-// Agregar al carrito
 if(isset($_POST['agregar_carrito'])) {
     $cant = intval($_POST['cantidad'] ?? 1);
     if(!isset($_SESSION['carrito'])) $_SESSION['carrito'] = [];
@@ -23,7 +22,6 @@ if(isset($_POST['agregar_carrito'])) {
     header('Location: producto_detalle.php?id=' . $id); exit;
 }
 
-// Toggle favorito
 if(isset($_POST['toggle_favorito'])) {
     $id_usuario = $_SESSION['usuario_id'];
     $check = $conn->prepare("SELECT id_favorito FROM favorito WHERE id_usuario=? AND id_producto=?");
@@ -31,7 +29,6 @@ if(isset($_POST['toggle_favorito'])) {
     $check->execute();
     $check->store_result();
     if($check->num_rows > 0) {
-        $conn->prepare("DELETE FROM favorito WHERE id_usuario=? AND id_producto=?")->bind_param("ii", $id_usuario, $id) && $conn->prepare("DELETE FROM favorito WHERE id_usuario=? AND id_producto=?")->execute();
         $del = $conn->prepare("DELETE FROM favorito WHERE id_usuario=? AND id_producto=?");
         $del->bind_param("ii", $id_usuario, $id);
         $del->execute();
@@ -43,20 +40,24 @@ if(isset($_POST['toggle_favorito'])) {
     header('Location: producto_detalle.php?id=' . $id); exit;
 }
 
-// ¿Es favorito?
 $fav_check = $conn->prepare("SELECT id_favorito FROM favorito WHERE id_usuario=? AND id_producto=?");
 $fav_check->bind_param("ii", $_SESSION['usuario_id'], $id);
 $fav_check->execute();
 $fav_check->store_result();
 $is_fav = $fav_check->num_rows > 0;
 
-// Productos relacionados
 $rel = $conn->prepare("SELECT * FROM producto WHERE id_categoria=? AND id_producto!=? AND estado=1 LIMIT 4");
 $rel->bind_param("ii", $p['id_categoria'], $id);
 $rel->execute();
 $relacionados = $rel->get_result();
 
 $cant_carrito = array_sum($_SESSION['carrito'] ?? []);
+
+// Helper para imagen
+function imgSrc($img, $prefix='../../assets/') {
+    if(!$img) return null;
+    return (strpos($img,'http')===0) ? $img : $prefix.$img;
+}
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -87,8 +88,6 @@ $cant_carrito = array_sum($_SESSION['carrito'] ?? []);
         .breadcrumb-nav a{color:#555;text-decoration:none;}
         .breadcrumb-nav a:hover{color:#00ff88;}
         .breadcrumb-nav span{color:#777;}
-
-        /* PRODUCT DETAIL */
         .img-main{background:#0d0d1a;border:1px solid #1a1a2e;border-radius:20px;height:420px;display:flex;align-items:center;justify-content:center;font-size:8rem;overflow:hidden;position:relative;}
         .img-main img{width:100%;height:100%;object-fit:contain;padding:20px;}
         .prod-tag{display:inline-block;background:rgba(0,255,136,0.08);border:1px solid rgba(0,255,136,0.2);color:#00ff88;border-radius:6px;padding:4px 12px;font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;}
@@ -117,13 +116,9 @@ $cant_carrito = array_sum($_SESSION['carrito'] ?? []);
         .btn-fav-main{width:50px;height:50px;border-radius:12px;border:1px solid #1a1a2e;background:#0d0d1a;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.2s;color:#555;font-size:1.2rem;flex-shrink:0;}
         .btn-fav-main:hover,.btn-fav-main.active{border-color:#ff4466;color:#ff4466;background:rgba(255,68,102,0.08);}
         .action-row{display:flex;gap:10px;align-items:center;}
-
-        /* TOAST */
         .toast-container{position:fixed;bottom:24px;right:24px;z-index:9999;}
         .toast-msg{background:#0d1f0d;border:1px solid rgba(0,255,136,0.3);border-radius:12px;padding:14px 20px;display:flex;align-items:center;gap:12px;font-size:0.875rem;box-shadow:0 8px 32px rgba(0,0,0,0.4);animation:slideIn 0.3s ease;}
         @keyframes slideIn{from{transform:translateX(100px);opacity:0;}to{transform:translateX(0);opacity:1;}}
-
-        /* RELACIONADOS */
         .section-title{font-size:1.2rem;font-weight:800;margin-bottom:20px;}
         .section-title span{color:#00ff88;}
         .rel-card{background:#0d0d1a;border:1px solid #1a1a2e;border-radius:14px;overflow:hidden;transition:all 0.3s;text-decoration:none;display:block;color:#fff;}
@@ -134,6 +129,10 @@ $cant_carrito = array_sum($_SESSION['carrito'] ?? []);
         .rel-nombre{font-weight:700;font-size:0.875rem;margin-bottom:4px;}
         .rel-precio{color:#00ff88;font-weight:800;font-size:1rem;}
         .divider{border:none;border-top:1px solid #1a1a2e;margin:40px 0;}
+        .guarantee-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:20px;}
+        .guarantee-item{background:#0d0d1a;border:1px solid #1a1a2e;border-radius:10px;padding:12px;text-align:center;}
+        .guarantee-item i{color:#00ff88;font-size:1.2rem;display:block;margin-bottom:4px;}
+        .guarantee-item span{font-size:0.72rem;color:#555;}
     </style>
 </head>
 <body>
@@ -173,7 +172,6 @@ $cant_carrito = array_sum($_SESSION['carrito'] ?? []);
 
 <div class="content">
     <div class="container">
-        <!-- BREADCRUMB -->
         <div class="breadcrumb-nav">
             <a href="productos.php">Tienda</a> /
             <a href="productos.php?categoria=<?= $p['id_categoria'] ?>"><?= htmlspecialchars($p['nombre_categoria']) ?></a> /
@@ -184,8 +182,9 @@ $cant_carrito = array_sum($_SESSION['carrito'] ?? []);
             <!-- IMAGEN -->
             <div class="col-lg-5">
                 <div class="img-main">
-                    <?php if($p['imagen']): ?>
-                        <img src="../../assets/<?= $p['imagen'] ?>" alt="<?= htmlspecialchars($p['nombre']) ?>">
+                    <?php $img = imgSrc($p['imagen']); ?>
+                    <?php if($img): ?>
+                        <img src="<?= $img ?>" alt="<?= htmlspecialchars($p['nombre']) ?>">
                     <?php else: ?>📦<?php endif; ?>
                 </div>
             </div>
@@ -195,25 +194,22 @@ $cant_carrito = array_sum($_SESSION['carrito'] ?? []);
                 <span class="prod-tag"><?= htmlspecialchars($p['nombre_categoria']) ?></span>
                 <h1 class="prod-title"><?= htmlspecialchars($p['nombre']) ?></h1>
                 <div class="prod-marca">Marca: <strong><?= htmlspecialchars($p['marca']) ?></strong></div>
-
                 <div class="prod-precio">Bs. <?= number_format($p['precio'], 2) ?></div>
 
                 <div class="prod-stock-info">
                     <?php if($p['stock'] > 10): ?>
                         <span class="stock-ok"><i class="bi bi-check-circle me-1"></i><?= $p['stock'] ?> unidades disponibles</span>
                     <?php elseif($p['stock'] > 0): ?>
-                        <span class="stock-low"><i class="bi bi-exclamation-circle me-1"></i>¡Solo quedan <?= $p['stock'] ?> unidades!</span>
+                        <span class="stock-low"><i class="bi bi-exclamation-circle me-1"></i>¡Solo quedan <?= $p['stock'] ?>!</span>
                     <?php else: ?>
-                        <span class="stock-out"><i class="bi bi-x-circle me-1"></i>Sin stock disponible</span>
+                        <span class="stock-out"><i class="bi bi-x-circle me-1"></i>Sin stock</span>
                     <?php endif; ?>
                 </div>
 
-                <!-- DESCRIPCIÓN -->
                 <?php if($p['descripcion']): ?>
                 <div class="prod-desc"><?= nl2br(htmlspecialchars($p['descripcion'])) ?></div>
                 <?php endif; ?>
 
-                <!-- ESPECIFICACIONES -->
                 <div class="specs-grid">
                     <div class="spec-item">
                         <div class="spec-label">Categoría</div>
@@ -247,13 +243,13 @@ $cant_carrito = array_sum($_SESSION['carrito'] ?? []);
                         <button type="submit" name="agregar_carrito" class="btn-add-main">
                             <i class="bi bi-cart-plus"></i> Agregar al carrito
                         </button>
+                </form>
                         <form method="POST" style="margin:0;">
-                            <button type="submit" name="toggle_favorito" class="btn-fav-main <?= $is_fav?'active':'' ?>" title="<?= $is_fav?'Quitar de favoritos':'Agregar a favoritos' ?>">
+                            <button type="submit" name="toggle_favorito" class="btn-fav-main <?= $is_fav?'active':'' ?>">
                                 <i class="bi bi-heart<?= $is_fav?'-fill':'' ?>"></i>
                             </button>
                         </form>
                     </div>
-                </form>
                 <?php else: ?>
                 <div class="action-row">
                     <button class="btn-add-main" disabled style="background:#1a1a2e;color:#444;cursor:not-allowed;">
@@ -267,35 +263,36 @@ $cant_carrito = array_sum($_SESSION['carrito'] ?? []);
                 </div>
                 <?php endif; ?>
 
-                <!-- GARANTÍAS -->
-                <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:20px;">
-                    <div style="background:#0d0d1a;border:1px solid #1a1a2e;border-radius:10px;padding:12px;text-align:center;">
-                        <i class="bi bi-shield-check" style="color:#00ff88;font-size:1.2rem;display:block;margin-bottom:4px;"></i>
-                        <div style="font-size:0.72rem;color:#555;">Garantía 1 año</div>
+                <div class="guarantee-grid">
+                    <div class="guarantee-item">
+                        <i class="bi bi-shield-check"></i>
+                        <span>Garantía 1 año</span>
                     </div>
-                    <div style="background:#0d0d1a;border:1px solid #1a1a2e;border-radius:10px;padding:12px;text-align:center;">
-                        <i class="bi bi-truck" style="color:#00ff88;font-size:1.2rem;display:block;margin-bottom:4px;"></i>
-                        <div style="font-size:0.72rem;color:#555;">Envío gratis</div>
+                    <div class="guarantee-item">
+                        <i class="bi bi-truck"></i>
+                        <span>Envío gratis</span>
                     </div>
-                    <div style="background:#0d0d1a;border:1px solid #1a1a2e;border-radius:10px;padding:12px;text-align:center;">
-                        <i class="bi bi-arrow-counterclockwise" style="color:#00ff88;font-size:1.2rem;display:block;margin-bottom:4px;"></i>
-                        <div style="font-size:0.72rem;color:#555;">Devolución 30 días</div>
+                    <div class="guarantee-item">
+                        <i class="bi bi-arrow-counterclockwise"></i>
+                        <span>Devolución 30 días</span>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- PRODUCTOS RELACIONADOS -->
+        <!-- RELACIONADOS -->
         <?php if($relacionados->num_rows > 0): ?>
         <hr class="divider">
         <div class="section-title">Productos <span>Relacionados</span></div>
         <div class="row g-4">
-            <?php while($r = $relacionados->fetch_assoc()): ?>
+            <?php while($r = $relacionados->fetch_assoc()):
+                $r_img = imgSrc($r['imagen']);
+            ?>
             <div class="col-6 col-md-3">
                 <a href="producto_detalle.php?id=<?= $r['id_producto'] ?>" class="rel-card">
                     <div class="rel-img">
-                        <?php if($r['imagen']): ?>
-                            <img src="../../assets/<?= $r['imagen'] ?>" alt="">
+                        <?php if($r_img): ?>
+                            <img src="<?= $r_img ?>" alt="<?= htmlspecialchars($r['nombre']) ?>">
                         <?php else: ?>📦<?php endif; ?>
                     </div>
                     <div class="rel-body">
@@ -316,8 +313,7 @@ $cant_carrito = array_sum($_SESSION['carrito'] ?? []);
 function cambiarCant(delta) {
     const input = document.getElementById('cantidad');
     const max   = parseInt(input.max);
-    const nuevo = Math.max(1, Math.min(max, parseInt(input.value) + delta));
-    input.value = nuevo;
+    input.value = Math.max(1, Math.min(max, parseInt(input.value) + delta));
 }
 const toast = document.getElementById('toastMsg');
 if(toast) setTimeout(() => { toast.style.transition='opacity 0.5s'; toast.style.opacity='0'; }, 3000);

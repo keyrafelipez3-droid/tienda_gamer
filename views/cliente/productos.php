@@ -709,8 +709,9 @@ $total_prods = $productos->num_rows;
                             <div class="prod-card" style="cursor:pointer;"
                                 onclick="window.location='producto_detalle.php?id=<?= $p['id_producto'] ?>'">
                                 <div class="prod-img">
-                                    <?php if ($p['imagen']): ?>
-                                        <img src="../../assets/<?= $p['imagen'] ?>" alt="<?= htmlspecialchars($p['nombre']) ?>">
+                                    <?php if($p['imagen']): ?>
+                                        <?php $img_src = (strpos($p['imagen'],'http')===0) ? $p['imagen'] : '../../assets/'.$p['imagen']; ?>
+                                        <img src="<?= $img_src ?>" alt="<?= htmlspecialchars($p['nombre']) ?>">
                                     <?php else: ?>📦<?php endif; ?>
                                     <span
                                         class="prod-badge badge-<?= $badges[$bi % 3] ?>"><?= ucfirst($badges[$bi % 3]) ?></span>
