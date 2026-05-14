@@ -6,7 +6,6 @@ if (!isset($_SESSION['usuario_id'])) {
 }
 require_once '../../config/db.php';
 
-// Agregar al carrito
 if (isset($_POST['agregar_carrito'])) {
     $id_producto = intval($_POST['id_producto']);
     if (!isset($_SESSION['carrito']))
@@ -19,7 +18,6 @@ if (isset($_POST['agregar_carrito'])) {
     $_SESSION['msg_carrito'] = 'Producto agregado al carrito.';
 }
 
-// Toggle favorito
 if (isset($_POST['toggle_favorito'])) {
     $id_producto = intval($_POST['id_producto']);
     $id_usuario = $_SESSION['usuario_id'];
@@ -38,7 +36,6 @@ if (isset($_POST['toggle_favorito'])) {
     }
 }
 
-// Filtros
 $buscar = trim($_GET['buscar'] ?? '');
 $id_cat = intval($_GET['categoria'] ?? 0);
 $orden = $_GET['orden'] ?? 'reciente';
@@ -76,7 +73,6 @@ $productos = $stmt->get_result();
 
 $categorias = $conn->query("SELECT * FROM categoria ORDER BY nombre_categoria");
 
-// Favoritos del usuario
 $favs = [];
 $fav_res = $conn->prepare("SELECT id_producto FROM favorito WHERE id_usuario=?");
 $fav_res->bind_param("i", $_SESSION['usuario_id']);
@@ -88,6 +84,13 @@ while ($f = $fav_data->fetch_assoc())
 $cant_carrito = array_sum($_SESSION['carrito'] ?? []);
 $cant_favoritos = count($favs);
 $total_prods = $productos->num_rows;
+
+function imgSrc($img, $prefix = '../../assets/')
+{
+    if (!$img)
+        return null;
+    return (strpos($img, 'http') === 0) ? $img : $prefix . $img;
+}
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -122,7 +125,6 @@ $total_prods = $productos->num_rows;
             border-radius: 3px;
         }
 
-        /* NAVBAR */
         .navbar {
             background: rgba(13, 13, 26, 0.95);
             backdrop-filter: blur(10px);
@@ -197,6 +199,14 @@ $total_prods = $productos->num_rows;
             border-radius: 20px;
             padding: 6px 14px;
             font-size: 0.82rem;
+            text-decoration: none;
+            color: #fff;
+            transition: all 0.2s;
+        }
+
+        .user-chip:hover {
+            background: rgba(0, 255, 136, 0.1);
+            color: #00ff88;
         }
 
         .user-chip .dot {
@@ -221,7 +231,6 @@ $total_prods = $productos->num_rows;
             background: rgba(255, 68, 68, 0.15);
         }
 
-        /* HERO BAR */
         .hero-bar {
             background: linear-gradient(135deg, #0a1225, #070711);
             border-bottom: 1px solid #1a1a2e;
@@ -243,7 +252,6 @@ $total_prods = $productos->num_rows;
             font-size: 0.9rem;
         }
 
-        /* FILTROS */
         .filter-bar {
             background: #0d0d1a;
             border-bottom: 1px solid #1a1a2e;
@@ -301,7 +309,6 @@ $total_prods = $productos->num_rows;
             color: #00ff88;
         }
 
-        /* TOAST */
         .toast-container {
             position: fixed;
             bottom: 24px;
@@ -339,7 +346,6 @@ $total_prods = $productos->num_rows;
             }
         }
 
-        /* PRODUCT GRID */
         .content {
             padding: 32px 0;
         }
@@ -551,7 +557,6 @@ $total_prods = $productos->num_rows;
             box-shadow: none;
         }
 
-        /* EMPTY */
         .empty-state {
             text-align: center;
             padding: 80px 20px;
@@ -575,7 +580,6 @@ $total_prods = $productos->num_rows;
 
 <body>
 
-    <!-- NAVBAR -->
     <nav class="navbar">
         <div class="container">
             <div class="d-flex justify-content-between align-items-center">
@@ -599,10 +603,10 @@ $total_prods = $productos->num_rows;
                         <i class="bi bi-bag-check"></i>
                         <span class="d-none d-md-inline">Mis Pedidos</span>
                     </a>
-                    <div class="user-chip d-none d-lg-flex">
+                    <a href="perfil.php" class="user-chip d-none d-lg-flex">
                         <div class="dot"></div>
                         <span><?= htmlspecialchars($_SESSION['usuario_nombre']) ?></span>
-                    </div>
+                    </a>
                     <form action="../../controllers/auth_controller.php" method="POST">
                         <input type="hidden" name="action" value="logout">
                         <button class="btn-logout-sm"><i class="bi bi-box-arrow-right me-1"></i>Salir</button>
@@ -612,7 +616,6 @@ $total_prods = $productos->num_rows;
         </div>
     </nav>
 
-    <!-- HERO BAR -->
     <div class="hero-bar">
         <div class="container">
             <h1>Catálogo de <span>Productos</span></h1>
@@ -620,7 +623,6 @@ $total_prods = $productos->num_rows;
         </div>
     </div>
 
-    <!-- FILTROS -->
     <div class="filter-bar">
         <div class="container">
             <form method="GET" class="row g-3 align-items-center">
@@ -674,7 +676,6 @@ $total_prods = $productos->num_rows;
         </div>
     </div>
 
-    <!-- TOAST -->
     <?php if (isset($_SESSION['msg_carrito'])): ?>
         <div class="toast-container">
             <div class="toast-msg" id="toastMsg">
@@ -685,7 +686,6 @@ $total_prods = $productos->num_rows;
         <?php unset($_SESSION['msg_carrito']); ?>
     <?php endif; ?>
 
-    <!-- PRODUCTOS -->
     <div class="content">
         <div class="container">
             <?php if ($total_prods === 0): ?>
@@ -695,7 +695,7 @@ $total_prods = $productos->num_rows;
                     <p>Intenta con otros términos de búsqueda o explora todas las categorías</p>
                     <a href="productos.php"
                         style="display:inline-block;margin-top:16px;background:#00ff88;color:#000;font-weight:700;border-radius:10px;padding:10px 24px;text-decoration:none;">Ver
-                        todos los productos</a>
+                        todos</a>
                 </div>
             <?php else: ?>
                 <div class="row g-4">
@@ -704,19 +704,19 @@ $total_prods = $productos->num_rows;
                     $bi = 0;
                     while ($p = $productos->fetch_assoc()):
                         $is_fav = in_array($p['id_producto'], $favs);
+                        $img_src = imgSrc($p['imagen']);
                         ?>
                         <div class="col-md-6 col-lg-4 col-xl-3">
                             <div class="prod-card" style="cursor:pointer;"
                                 onclick="window.location='producto_detalle.php?id=<?= $p['id_producto'] ?>'">
                                 <div class="prod-img">
-                                    <?php if($p['imagen']): ?>
-                                        <?php $img_src = (strpos($p['imagen'],'http')===0) ? $p['imagen'] : '../../assets/'.$p['imagen']; ?>
+                                    <?php if ($img_src): ?>
                                         <img src="<?= $img_src ?>" alt="<?= htmlspecialchars($p['nombre']) ?>">
                                     <?php else: ?>📦<?php endif; ?>
                                     <span
                                         class="prod-badge badge-<?= $badges[$bi % 3] ?>"><?= ucfirst($badges[$bi % 3]) ?></span>
-                                    <!-- Botón favorito -->
-                                    <form method="POST" style="position:absolute;top:12px;right:12px;">
+                                    <form method="POST" style="position:absolute;top:12px;right:12px;"
+                                        onclick="event.stopPropagation()">
                                         <input type="hidden" name="id_producto" value="<?= $p['id_producto'] ?>">
                                         <button type="submit" name="toggle_favorito"
                                             class="fav-btn <?= $is_fav ? 'active' : '' ?>"
@@ -745,7 +745,7 @@ $total_prods = $productos->num_rows;
                                         <?php endif; ?>
                                     </div>
                                     <?php if ($p['stock'] > 0): ?>
-                                        <form method="POST">
+                                        <form method="POST" onclick="event.stopPropagation()">
                                             <input type="hidden" name="id_producto" value="<?= $p['id_producto'] ?>">
                                             <button type="submit" name="agregar_carrito" class="btn-add">
                                                 <i class="bi bi-cart-plus"></i> Agregar al carrito
@@ -765,7 +765,6 @@ $total_prods = $productos->num_rows;
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Auto-ocultar toast
         const toast = document.getElementById('toastMsg');
         if (toast) setTimeout(() => toast.style.opacity = '0', 3000);
     </script>
