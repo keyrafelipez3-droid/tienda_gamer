@@ -1,193 +1,294 @@
 <?php
 session_start();
-if (!isset($_SESSION['usuario_id']) || $_SESSION['usuario_rol'] !== 'admin') {
-    header('Location: ../auth/login.php');
-    exit;
+if(!isset($_SESSION['usuario_id']) || !in_array($_SESSION['usuario_rol'], ['admin','super_admin'])) {
+    header('Location: ../auth/login.php'); exit;
 }
 require_once '../../config/db.php';
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+$es_super = $_SESSION['usuario_rol'] === 'super_admin';
+
+if($_SERVER['REQUEST_METHOD'] === 'POST') {
     $accion = $_POST['accion'];
 
-    if ($accion === 'crear' || $accion === 'editar') {
+    if($accion === 'crear' || $accion === 'editar') {
         $nombre = trim($_POST['nombre']);
-        $marca = trim($_POST['marca']);
-        $desc = trim($_POST['descripcion']);
+        $marca  = trim($_POST['marca']);
+        $desc   = trim($_POST['descripcion']);
         $precio = floatval($_POST['precio']);
-        $stock = intval($_POST['stock']);
+        $stock  = intval($_POST['stock']);
         $id_cat = intval($_POST['id_categoria']);
         $estado = isset($_POST['estado']) ? 1 : 0;
         $imagen = '';
 
-        if (!empty($_FILES['imagen']['name'])) {
-            $ext = pathinfo($_FILES['imagen']['name'], PATHINFO_EXTENSION);
+        if(!empty($_FILES['imagen']['name'])) {
+            $ext    = pathinfo($_FILES['imagen']['name'], PATHINFO_EXTENSION);
             $imagen = 'img/' . uniqid() . '.' . $ext;
             move_uploaded_file($_FILES['imagen']['tmp_name'], '../../assets/' . $imagen);
         }
 
-        if ($accion === 'crear') {
-            $stmt = $conn->prepare("INSERT INTO producto (id_categoria, nombre, marca, descripcion, precio, stock, imagen, estado) VALUES (?,?,?,?,?,?,?,?)");
-            $stmt->bind_param("isssdisi", $id_cat, $nombre, $marca, $desc, $precio, $stock, $imagen, $estado);
+        if($accion === 'crear') {
+            $stmt = $conn->prepare("INSERT INTO producto (id_categoria,nombre,marca,descripcion,precio,stock,imagen,estado) VALUES (?,?,?,?,?,?,?,?)");
+            $stmt->bind_param("isssdisi", $id_cat,$nombre,$marca,$desc,$precio,$stock,$imagen,$estado);
             $stmt->execute();
+            $_SESSION['success'] = "Producto <strong>$nombre</strong> creado correctamente.";
         } else {
             $id = intval($_POST['id_producto']);
-            if ($imagen) {
-                $stmt = $conn->prepare("UPDATE producto SET id_categoria=?, nombre=?, marca=?, descripcion=?, precio=?, stock=?, imagen=?, estado=? WHERE id_producto=?");
-                $stmt->bind_param("isssdisii", $id_cat, $nombre, $marca, $desc, $precio, $stock, $imagen, $estado, $id);
+            if($imagen) {
+                $stmt = $conn->prepare("UPDATE producto SET id_categoria=?,nombre=?,marca=?,descripcion=?,precio=?,stock=?,imagen=?,estado=? WHERE id_producto=?");
+                $stmt->bind_param("isssdisii",$id_cat,$nombre,$marca,$desc,$precio,$stock,$imagen,$estado,$id);
             } else {
-                $stmt = $conn->prepare("UPDATE producto SET id_categoria=?, nombre=?, marca=?, descripcion=?, precio=?, stock=?, estado=? WHERE id_producto=?");
-                $stmt->bind_param("isssdiii", $id_cat, $nombre, $marca, $desc, $precio, $stock, $estado, $id);
+                $stmt = $conn->prepare("UPDATE producto SET id_categoria=?,nombre=?,marca=?,descripcion=?,precio=?,stock=?,estado=? WHERE id_producto=?");
+                $stmt->bind_param("isssdiii",$id_cat,$nombre,$marca,$desc,$precio,$stock,$estado,$id);
             }
             $stmt->execute();
+            $_SESSION['success'] = "Producto actualizado correctamente.";
         }
     }
 
-    if ($accion === 'eliminar') {
-        $id = intval($_POST['id_producto']);
+    if($accion === 'eliminar') {
+        $id   = intval($_POST['id_producto']);
         $stmt = $conn->prepare("DELETE FROM producto WHERE id_producto=?");
         $stmt->bind_param("i", $id);
         $stmt->execute();
+        $_SESSION['success'] = "Producto eliminado correctamente.";
     }
 
-    header('Location: productos.php');
-    exit;
+    header('Location: productos.php'); exit;
 }
 
-$productos = $conn->query("SELECT p.*, c.nombre_categoria FROM producto p JOIN categoria c ON p.id_categoria = c.id_categoria ORDER BY p.id_producto DESC");
-$categorias = $conn->query("SELECT * FROM categoria ORDER BY nombre_categoria");
+$productos   = $conn->query("SELECT p.*, c.nombre_categoria FROM producto p JOIN categoria c ON p.id_categoria=c.id_categoria ORDER BY p.id_producto DESC");
+$categorias  = $conn->query("SELECT * FROM categoria ORDER BY nombre_categoria");
+$total_prods = $conn->query("SELECT COUNT(*) as t FROM producto")->fetch_assoc()['t'];
+$total_activos = $conn->query("SELECT COUNT(*) as t FROM producto WHERE estado=1")->fetch_assoc()['t'];
+$stock_bajo  = $conn->query("SELECT COUNT(*) as t FROM producto WHERE stock<=5 AND estado=1")->fetch_assoc()['t'];
 ?>
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Productos - Admin GamerZone</title>
+    <title>Productos - GamerZone Admin</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        body { background-color: #0a0a0a; color: #fff; font-family: 'Segoe UI', sans-serif; }
-        .navbar { background-color: #0d0d0d; border-bottom: 2px solid #00ff88; }
-        .navbar-brand { color: #00ff88 !important; font-weight: 800; }
-        .navbar-brand span { color: #fff; }
-        .nav-link { color: #ccc !important; }
-        .nav-link:hover, .nav-link.active { color: #00ff88 !important; }
-        .btn-gamer { background: #00ff88; color: #000; font-weight: 700; border: none; border-radius: 8px; }
-        .btn-gamer:hover { background: #00cc6a; color: #000; }
-        .card-admin { background: #111; border: 1px solid #222; border-radius: 16px; }
-        .table { color: #fff; }
-        .table thead th { color: #00ff88; border-color: #222; background: #0d0d0d; }
-        .table td { border-color: #1a1a1a; vertical-align: middle; }
-        .table tbody tr:hover { background: #161616; }
-        .modal-content { background: #111; border: 1px solid #333; color: #fff; }
-        .modal-header { border-bottom: 1px solid #222; }
-        .modal-footer { border-top: 1px solid #222; }
-        .form-control, .form-select { background: #1a1a1a; border: 1px solid #333; color: #fff; border-radius: 8px; }
-        .form-control:focus, .form-select:focus { background: #1a1a1a; border-color: #00ff88; color: #fff; box-shadow: none; }
-        .form-select option { background: #1a1a1a; }
-        .producto-img { width: 50px; height: 50px; object-fit: cover; border-radius: 8px; background: #1a1a1a; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; }
-        .badge-stock-ok { background: #0d2a0d; color: #00ff88; border: 1px solid #00ff88; border-radius: 6px; padding: 2px 8px; font-size: 0.75rem; }
-        .badge-stock-low { background: #2a1a0d; color: #ffa500; border: 1px solid #ffa500; border-radius: 6px; padding: 2px 8px; font-size: 0.75rem; }
-        .badge-stock-out { background: #2a0d0d; color: #ff4444; border: 1px solid #ff4444; border-radius: 6px; padding: 2px 8px; font-size: 0.75rem; }
-        .page-title { color: #00ff88; font-weight: 800; }
-        .alert-success-custom { background: #0d2a0d; border: 1px solid #00ff88; color: #00ff88; border-radius: 10px; padding: 12px 16px; }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { background:#070711; color:#fff; font-family:'Inter',sans-serif; }
+        .sidebar { position:fixed; left:0; top:0; bottom:0; width:260px; background:#0d0d1a; border-right:1px solid #1a1a2e; display:flex; flex-direction:column; z-index:100; }
+        .sidebar-brand { padding:24px 20px; border-bottom:1px solid #1a1a2e; }
+        .brand-name { font-size:1.5rem; font-weight:800; color:#00ff88; }
+        .brand-name span { color:#fff; }
+        .brand-role { font-size:0.75rem; color:#555; margin-top:4px; }
+        .brand-role.super { color:#a855f7; }
+        .sidebar-nav { padding:16px 0; flex:1; overflow-y:auto; }
+        .nav-section { padding:8px 20px 4px; font-size:0.65rem; text-transform:uppercase; letter-spacing:2px; color:#444; font-weight:600; }
+        .sidebar-link { display:flex; align-items:center; gap:12px; padding:11px 20px; color:#666; font-size:0.9rem; font-weight:500; text-decoration:none; transition:all 0.2s; border-left:3px solid transparent; }
+        .sidebar-link:hover { color:#fff; background:rgba(255,255,255,0.04); }
+        .sidebar-link.active { color:#00ff88; background:rgba(0,255,136,0.06); border-left-color:#00ff88; }
+        .sidebar-link i { font-size:1rem; width:20px; }
+        .sidebar-footer { padding:16px 20px; border-top:1px solid #1a1a2e; }
+        .user-info { display:flex; align-items:center; gap:10px; margin-bottom:12px; }
+        .user-av { width:34px; height:34px; border-radius:8px; background:rgba(0,255,136,0.1); border:1px solid rgba(0,255,136,0.2); display:flex; align-items:center; justify-content:center; color:#00ff88; font-weight:700; font-size:0.85rem; }
+        .user-name { font-size:0.82rem; font-weight:600; }
+        .user-role { font-size:0.7rem; color:#555; }
+        .btn-logout { background:rgba(255,68,68,0.1); border:1px solid rgba(255,68,68,0.2); color:#ff6b6b; border-radius:8px; padding:8px 16px; font-size:0.82rem; font-weight:600; cursor:pointer; transition:all 0.2s; width:100%; }
+        .btn-logout:hover { background:rgba(255,68,68,0.2); }
+        .main { margin-left:260px; min-height:100vh; }
+        .topbar { background:#0d0d1a; border-bottom:1px solid #1a1a2e; padding:18px 32px; display:flex; justify-content:space-between; align-items:center; position:sticky; top:0; z-index:50; }
+        .topbar-title { font-size:1.1rem; font-weight:700; }
+        .topbar-title span { color:#00ff88; }
+        .breadcrumb-nav { font-size:0.75rem; color:#444; margin-top:2px; }
+        .breadcrumb-nav a { color:#555; text-decoration:none; }
+        .breadcrumb-nav a:hover { color:#00ff88; }
+        .content { padding:32px; }
+        .btn-gamer { background:#00ff88; color:#000; font-weight:700; border:none; border-radius:10px; padding:10px 20px; font-size:0.875rem; transition:all 0.2s; display:inline-flex; align-items:center; gap:8px; cursor:pointer; }
+        .btn-gamer:hover { background:#00cc6a; transform:translateY(-1px); box-shadow:0 4px 15px rgba(0,255,136,0.2); }
+        .stats-row { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:28px; }
+        .mini-stat { background:#0d0d1a; border:1px solid #1a1a2e; border-radius:14px; padding:20px; display:flex; align-items:center; gap:16px; }
+        .mini-stat-icon { width:44px; height:44px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:1.2rem; flex-shrink:0; }
+        .mini-stat-num { font-size:1.6rem; font-weight:800; color:#00ff88; }
+        .mini-stat-label { font-size:0.78rem; color:#555; }
+        .table-card { background:#0d0d1a; border:1px solid #1a1a2e; border-radius:16px; overflow:hidden; }
+        .table-header { padding:20px 24px; border-bottom:1px solid #1a1a2e; display:flex; justify-content:space-between; align-items:center; gap:16px; flex-wrap:wrap; }
+        .table-title { font-size:0.95rem; font-weight:700; }
+        .search-box { background:#111120; border:1px solid #1a1a2e; border-radius:8px; padding:8px 14px; color:#fff; font-size:0.82rem; width:220px; }
+        .search-box:focus { outline:none; border-color:#00ff88; }
+        .search-box::placeholder { color:#333; }
+        table { width:100%; border-collapse:collapse; }
+        thead th { padding:12px 20px; font-size:0.72rem; text-transform:uppercase; letter-spacing:1px; color:#444; font-weight:600; border-bottom:1px solid #1a1a2e; background:#0a0a14; text-align:left; white-space:nowrap; }
+        tbody td { padding:14px 20px; border-bottom:1px solid #0f0f1f; font-size:0.875rem; vertical-align:middle; }
+        tbody tr:hover { background:rgba(255,255,255,0.02); }
+        tbody tr:last-child td { border-bottom:none; }
+        .prod-img-table { width:46px; height:46px; border-radius:10px; background:#151520; display:flex; align-items:center; justify-content:center; font-size:1.4rem; overflow:hidden; border:1px solid #1a1a2e; flex-shrink:0; }
+        .prod-img-table img { width:100%; height:100%; object-fit:cover; }
+        .badge-cat { background:rgba(0,255,136,0.08); border:1px solid rgba(0,255,136,0.15); color:#00ff88; border-radius:6px; padding:3px 10px; font-size:0.72rem; font-weight:600; }
+        .stock-ok { background:rgba(0,255,136,0.08); border:1px solid rgba(0,255,136,0.2); color:#00ff88; border-radius:6px; padding:3px 10px; font-size:0.72rem; font-weight:600; }
+        .stock-low { background:rgba(245,158,11,0.08); border:1px solid rgba(245,158,11,0.2); color:#f59e0b; border-radius:6px; padding:3px 10px; font-size:0.72rem; font-weight:600; }
+        .stock-out { background:rgba(239,68,68,0.08); border:1px solid rgba(239,68,68,0.2); color:#ef4444; border-radius:6px; padding:3px 10px; font-size:0.72rem; font-weight:600; }
+        .estado-on { background:rgba(0,255,136,0.08); color:#00ff88; border:1px solid rgba(0,255,136,0.2); border-radius:6px; padding:3px 10px; font-size:0.72rem; font-weight:600; }
+        .estado-off { background:rgba(100,100,100,0.08); color:#555; border:1px solid #1a1a2e; border-radius:6px; padding:3px 10px; font-size:0.72rem; font-weight:600; }
+        .icon-btns { display:flex; gap:6px; }
+        .icon-btn { width:32px; height:32px; border-radius:8px; display:flex; align-items:center; justify-content:center; border:1px solid; cursor:pointer; transition:all 0.2s; font-size:0.82rem; background:transparent; }
+        .icon-btn-edit { border-color:rgba(245,158,11,0.3); color:#f59e0b; }
+        .icon-btn-edit:hover { background:rgba(245,158,11,0.1); }
+        .icon-btn-del { border-color:rgba(239,68,68,0.3); color:#ef4444; }
+        .icon-btn-del:hover { background:rgba(239,68,68,0.1); }
+        .alert-ok { background:rgba(0,255,136,0.06); border:1px solid rgba(0,255,136,0.2); color:#00ff88; border-radius:12px; padding:14px 20px; margin-bottom:20px; display:flex; align-items:center; gap:10px; }
+        .alert-err { background:rgba(239,68,68,0.06); border:1px solid rgba(239,68,68,0.2); color:#ef4444; border-radius:12px; padding:14px 20px; margin-bottom:20px; display:flex; align-items:center; gap:10px; }
+        .modal-content { background:#0d0d1a; border:1px solid #1a1a2e; border-radius:16px; color:#fff; }
+        .modal-header { border-bottom:1px solid #1a1a2e; padding:20px 24px; }
+        .modal-footer { border-top:1px solid #1a1a2e; padding:16px 24px; }
+        .modal-body { padding:24px; }
+        .form-label { font-size:0.82rem; font-weight:600; color:#aaa; margin-bottom:6px; }
+        .form-control, .form-select { background:#111120; border:1px solid #1a1a2e; color:#fff; border-radius:10px; padding:10px 14px; font-size:0.875rem; transition:border-color 0.2s; width:100%; }
+        .form-control:focus, .form-select:focus { background:#111120; border-color:#00ff88; color:#fff; box-shadow:0 0 0 3px rgba(0,255,136,0.08); outline:none; }
+        .form-control::placeholder { color:#333; }
+        .form-select option { background:#111120; }
+        .form-check-input:checked { background-color:#00ff88; border-color:#00ff88; }
+        .btn-cancel { background:rgba(255,255,255,0.05); border:1px solid #1a1a2e; color:#aaa; border-radius:10px; padding:10px 20px; font-size:0.875rem; cursor:pointer; transition:all 0.2s; }
+        .btn-cancel:hover { background:rgba(255,255,255,0.08); color:#fff; }
+        .btn-warning-c { background:rgba(245,158,11,0.1); border:1px solid rgba(245,158,11,0.2); color:#f59e0b; border-radius:10px; padding:10px 20px; font-size:0.875rem; font-weight:600; cursor:pointer; transition:all 0.2s; }
+        .btn-warning-c:hover { background:rgba(245,158,11,0.2); }
+        .btn-danger-c { background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.2); color:#ef4444; border-radius:10px; padding:10px 20px; font-size:0.875rem; font-weight:600; cursor:pointer; transition:all 0.2s; }
+        .btn-danger-c:hover { background:rgba(239,68,68,0.2); }
+        ::-webkit-scrollbar { width:4px; }
+        ::-webkit-scrollbar-thumb { background:#1a1a2e; border-radius:2px; }
     </style>
 </head>
 <body>
 
-<nav class="navbar navbar-expand-lg">
-    <div class="container-fluid px-4">
-        <a class="navbar-brand" href="dashboard.php">Gamer<span>Zone</span> <small class="text-muted fs-6">Admin</small></a>
-        <div class="d-flex gap-3 ms-auto align-items-center">
-            <a href="dashboard.php" class="nav-link"><i class="bi bi-speedometer2"></i> Dashboard</a>
-            <a href="productos.php" class="nav-link active"><i class="bi bi-box"></i> Productos</a>
-            <a href="categorias.php" class="nav-link"><i class="bi bi-tags"></i> Categorías</a>
-            <a href="ventas.php" class="nav-link"><i class="bi bi-cart"></i> Ventas</a>
-            <a href="usuarios.php" class="nav-link"><i class="bi bi-people"></i> Usuarios</a>
-            <form action="../../controllers/auth_controller.php" method="POST" class="d-inline">
-                <input type="hidden" name="action" value="logout">
-                <button class="btn btn-gamer btn-sm">Salir</button>
-            </form>
+<div class="sidebar">
+    <div class="sidebar-brand">
+        <div class="brand-name">Gamer<span>Zone</span></div>
+        <div class="brand-role <?= $es_super?'super':'' ?>"><?= $es_super?'⭐ Super Administrador':'👤 Administrador' ?></div>
+    </div>
+    <nav class="sidebar-nav">
+        <div class="nav-section">Principal</div>
+        <a href="dashboard.php" class="sidebar-link"><i class="bi bi-speedometer2"></i> Dashboard</a>
+        <div class="nav-section">Gestión</div>
+        <a href="productos.php" class="sidebar-link active"><i class="bi bi-box-seam"></i> Productos</a>
+        <a href="categorias.php" class="sidebar-link"><i class="bi bi-tags"></i> Categorías</a>
+        <a href="ventas.php" class="sidebar-link"><i class="bi bi-bag"></i> Ventas</a>
+        <a href="usuarios.php" class="sidebar-link"><i class="bi bi-people"></i> Usuarios</a>
+        <div class="nav-section">Sistema</div>
+        <a href="../../index.php" class="sidebar-link"><i class="bi bi-globe"></i> Ver Tienda</a>
+    </nav>
+    <div class="sidebar-footer">
+        <div class="user-info">
+            <div class="user-av"><?= strtoupper(substr($_SESSION['usuario_nombre'],0,1)) ?></div>
+            <div>
+                <div class="user-name"><?= htmlspecialchars($_SESSION['usuario_nombre']) ?></div>
+                <div class="user-role"><?= ucfirst(str_replace('_',' ',$_SESSION['usuario_rol'])) ?></div>
+            </div>
         </div>
+        <form action="../../controllers/auth_controller.php" method="POST">
+            <input type="hidden" name="action" value="logout">
+            <button class="btn-logout"><i class="bi bi-box-arrow-right me-2"></i>Cerrar Sesión</button>
+        </form>
     </div>
-</nav>
+</div>
 
-<div class="container-fluid px-4 mt-4">
-    <?php if(isset($_GET['ok'])): ?>
-    <div class="alert-success-custom mb-3"><i class="bi bi-check-circle me-2"></i>
-        <?= $_GET['ok'] === 'crear' ? 'Producto creado' : ($_GET['ok'] === 'editar' ? 'Producto actualizado' : 'Producto eliminado') ?> correctamente.
-    </div>
-    <?php endif; ?>
-
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h3 class="page-title mb-0"><i class="bi bi-box"></i> Gestión de Productos</h3>
-        <button class="btn btn-gamer" data-bs-toggle="modal" data-bs-target="#modalCrear">
+<div class="main">
+    <div class="topbar">
+        <div>
+            <div class="topbar-title"><i class="bi bi-box-seam" style="color:#00ff88"></i> <span>Productos</span></div>
+            <div class="breadcrumb-nav"><a href="dashboard.php">Dashboard</a> / Productos</div>
+        </div>
+        <button class="btn-gamer" data-bs-toggle="modal" data-bs-target="#modalCrear">
             <i class="bi bi-plus-lg"></i> Nuevo Producto
         </button>
     </div>
 
-    <div class="card-admin p-0 overflow-hidden">
-        <table class="table mb-0">
-            <thead>
+    <div class="content">
+        <?php if(isset($_SESSION['success'])): ?>
+        <div class="alert-ok"><i class="bi bi-check-circle-fill"></i><?= $_SESSION['success']; unset($_SESSION['success']); ?></div>
+        <?php endif; ?>
+        <?php if(isset($_SESSION['error'])): ?>
+        <div class="alert-err"><i class="bi bi-exclamation-circle-fill"></i><?= $_SESSION['error']; unset($_SESSION['error']); ?></div>
+        <?php endif; ?>
+
+        <div class="stats-row">
+            <div class="mini-stat">
+                <div class="mini-stat-icon" style="background:rgba(0,255,136,0.1);">📦</div>
+                <div><div class="mini-stat-num"><?= $total_prods ?></div><div class="mini-stat-label">Total productos</div></div>
+            </div>
+            <div class="mini-stat">
+                <div class="mini-stat-icon" style="background:rgba(59,130,246,0.1);">✅</div>
+                <div><div class="mini-stat-num" style="color:#3b82f6"><?= $total_activos ?></div><div class="mini-stat-label">Productos activos</div></div>
+            </div>
+            <div class="mini-stat">
+                <div class="mini-stat-icon" style="background:rgba(245,158,11,0.1);">⚠️</div>
+                <div><div class="mini-stat-num" style="color:#f59e0b"><?= $stock_bajo ?></div><div class="mini-stat-label">Stock bajo (≤5)</div></div>
+            </div>
+            <div class="mini-stat">
+                <div class="mini-stat-icon" style="background:rgba(168,85,247,0.1);">🏷️</div>
+                <div><div class="mini-stat-num" style="color:#a855f7"><?= $conn->query("SELECT COUNT(*) as t FROM categoria")->fetch_assoc()['t'] ?></div><div class="mini-stat-label">Categorías</div></div>
+            </div>
+        </div>
+
+        <div class="table-card">
+            <div class="table-header">
+                <div class="table-title"><i class="bi bi-box-seam" style="color:#00ff88;margin-right:8px;"></i>Catálogo de Productos</div>
+                <div class="d-flex align-items-center gap-3">
+                    <input type="text" class="search-box" id="searchProd" placeholder="🔍  Buscar producto...">
+                    <span style="font-size:0.78rem;color:#555;"><?= $total_prods ?> producto<?= $total_prods!=1?'s':'' ?></span>
+                </div>
+            </div>
+            <table id="tablaProductos">
+                <thead>
+                    <tr>
+                        <th>#</th><th>Imagen</th><th>Producto</th><th>Categoría</th>
+                        <th>Precio</th><th>Stock</th><th>Estado</th><th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                <?php while($p = $productos->fetch_assoc()): ?>
                 <tr>
-                    <th>#</th><th>Img</th><th>Nombre</th><th>Marca</th>
-                    <th>Categoría</th><th>Precio</th><th>Stock</th><th>Estado</th><th>Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php while ($p = $productos->fetch_assoc()): ?>
-                <tr>
-                    <td class="text-muted"><?= $p['id_producto'] ?></td>
+                    <td style="color:#444;font-size:0.78rem;"><?= $p['id_producto'] ?></td>
                     <td>
-                        <?php if ($p['imagen']): ?>
-                            <img src="../../assets/<?= $p['imagen'] ?>" class="producto-img">
-                        <?php else: ?>
-                            <div class="producto-img">📦</div>
-                        <?php endif; ?>
-                    </td>
-                    <td><strong><?= htmlspecialchars($p['nombre']) ?></strong></td>
-                    <td class="text-muted"><?= htmlspecialchars($p['marca']) ?></td>
-                    <td><span style="color:#00ff88;font-size:0.85rem;"><?= htmlspecialchars($p['nombre_categoria']) ?></span></td>
-                    <td><strong class="text-success">Bs. <?= number_format($p['precio'], 2) ?></strong></td>
-                    <td>
-                        <?php if ($p['stock'] > 10): ?>
-                            <span class="badge-stock-ok"><?= $p['stock'] ?> und.</span>
-                        <?php elseif ($p['stock'] > 0): ?>
-                            <span class="badge-stock-low"><?= $p['stock'] ?> und.</span>
-                        <?php else: ?>
-                            <span class="badge-stock-out">Agotado</span>
-                        <?php endif; ?>
+                        <div class="prod-img-table">
+                            <?php if($p['imagen']): ?>
+                                <img src="../../assets/<?= $p['imagen'] ?>" alt="">
+                            <?php else: ?>📦<?php endif; ?>
+                        </div>
                     </td>
                     <td>
-                        <?php if ($p['estado']): ?>
-                            <span class="badge bg-success">Activo</span>
-                        <?php else: ?>
-                            <span class="badge bg-secondary">Inactivo</span>
-                        <?php endif; ?>
+                        <div style="font-weight:600;font-size:0.875rem;"><?= htmlspecialchars($p['nombre']) ?></div>
+                        <div style="font-size:0.72rem;color:#555;margin-top:2px;"><?= htmlspecialchars($p['marca']) ?></div>
                     </td>
+                    <td><span class="badge-cat"><?= htmlspecialchars($p['nombre_categoria']) ?></span></td>
+                    <td><strong style="color:#00ff88;">Bs. <?= number_format($p['precio'],2) ?></strong></td>
                     <td>
-                        <button class="btn btn-sm btn-outline-warning me-1"
-                            data-bs-toggle="modal" data-bs-target="#modalEditar"
-                            data-id="<?= $p['id_producto'] ?>"
-                            data-nombre="<?= htmlspecialchars($p['nombre']) ?>"
-                            data-marca="<?= htmlspecialchars($p['marca']) ?>"
-                            data-desc="<?= htmlspecialchars($p['descripcion']) ?>"
-                            data-precio="<?= $p['precio'] ?>"
-                            data-stock="<?= $p['stock'] ?>"
-                            data-cat="<?= $p['id_categoria'] ?>"
-                            data-estado="<?= $p['estado'] ?>">
-                            <i class="bi bi-pencil"></i>
-                        </button>
-                        <button class="btn btn-sm btn-outline-danger"
-                            data-bs-toggle="modal" data-bs-target="#modalEliminar"
-                            data-id="<?= $p['id_producto'] ?>"
-                            data-nombre="<?= htmlspecialchars($p['nombre']) ?>">
-                            <i class="bi bi-trash"></i>
-                        </button>
+                        <?php if($p['stock']>10): ?><span class="stock-ok"><?= $p['stock'] ?> und.</span>
+                        <?php elseif($p['stock']>0): ?><span class="stock-low"><?= $p['stock'] ?> und.</span>
+                        <?php else: ?><span class="stock-out">Agotado</span><?php endif; ?>
+                    </td>
+                    <td><?= $p['estado'] ? '<span class="estado-on">Activo</span>' : '<span class="estado-off">Inactivo</span>' ?></td>
+                    <td>
+                        <div class="icon-btns">
+                            <button class="icon-btn icon-btn-edit" data-bs-toggle="modal" data-bs-target="#modalEditar"
+                                data-id="<?= $p['id_producto'] ?>"
+                                data-nombre="<?= htmlspecialchars($p['nombre']) ?>"
+                                data-marca="<?= htmlspecialchars($p['marca']) ?>"
+                                data-desc="<?= htmlspecialchars($p['descripcion']) ?>"
+                                data-precio="<?= $p['precio'] ?>"
+                                data-stock="<?= $p['stock'] ?>"
+                                data-cat="<?= $p['id_categoria'] ?>"
+                                data-estado="<?= $p['estado'] ?>" title="Editar">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <button class="icon-btn icon-btn-del" data-bs-toggle="modal" data-bs-target="#modalEliminar"
+                                data-id="<?= $p['id_producto'] ?>"
+                                data-nombre="<?= htmlspecialchars($p['nombre']) ?>" title="Eliminar">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
                     </td>
                 </tr>
                 <?php endwhile; ?>
-            </tbody>
-        </table>
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
 
@@ -196,7 +297,7 @@ $categorias = $conn->query("SELECT * FROM categoria ORDER BY nombre_categoria");
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title text-success">Nuevo Producto</h5>
+                <h5 class="modal-title" style="color:#00ff88;font-weight:700;"><i class="bi bi-plus-circle me-2"></i>Nuevo Producto</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <form method="POST" enctype="multipart/form-data">
@@ -204,48 +305,48 @@ $categorias = $conn->query("SELECT * FROM categoria ORDER BY nombre_categoria");
                 <div class="modal-body">
                     <div class="row g-3">
                         <div class="col-md-8">
-                            <label class="form-label">Nombre del producto</label>
-                            <input type="text" name="nombre" class="form-control" required>
+                            <label class="form-label">Nombre del producto *</label>
+                            <input type="text" name="nombre" class="form-control" placeholder="Ej: Laptop Gamer ROG Strix" required>
                         </div>
                         <div class="col-md-4">
                             <label class="form-label">Marca</label>
-                            <input type="text" name="marca" class="form-control">
+                            <input type="text" name="marca" class="form-control" placeholder="Ej: ASUS, Sony...">
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label">Categoría</label>
+                            <label class="form-label">Categoría *</label>
                             <select name="id_categoria" class="form-select" required>
-                                <?php $categorias->data_seek(0); while ($c = $categorias->fetch_assoc()): ?>
+                                <?php $categorias->data_seek(0); while($c=$categorias->fetch_assoc()): ?>
                                 <option value="<?= $c['id_categoria'] ?>"><?= $c['nombre_categoria'] ?></option>
                                 <?php endwhile; ?>
                             </select>
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label">Precio (Bs.)</label>
-                            <input type="number" name="precio" class="form-control" step="0.01" required>
+                            <label class="form-label">Precio (Bs.) *</label>
+                            <input type="number" name="precio" class="form-control" step="0.01" min="0" placeholder="0.00" required>
                         </div>
                         <div class="col-md-4">
                             <label class="form-label">Stock</label>
-                            <input type="number" name="stock" class="form-control" value="0">
+                            <input type="number" name="stock" class="form-control" value="0" min="0">
                         </div>
                         <div class="col-12">
                             <label class="form-label">Descripción</label>
-                            <textarea name="descripcion" class="form-control" rows="3"></textarea>
+                            <textarea name="descripcion" class="form-control" rows="3" placeholder="Describe las características del producto..."></textarea>
                         </div>
                         <div class="col-md-8">
-                            <label class="form-label">Imagen</label>
+                            <label class="form-label">Imagen del producto</label>
                             <input type="file" name="imagen" class="form-control" accept="image/*">
                         </div>
-                        <div class="col-md-4 d-flex align-items-end">
+                        <div class="col-md-4 d-flex align-items-end pb-1">
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" name="estado" id="estadoCrear" checked>
-                                <label class="form-check-label" for="estadoCrear">Producto activo</label>
+                                <label class="form-check-label" for="estadoCrear" style="font-size:0.875rem;">Producto activo</label>
                             </div>
                         </div>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-gamer">Guardar producto</button>
+                    <button type="button" class="btn-cancel" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn-gamer"><i class="bi bi-check-lg me-1"></i>Guardar Producto</button>
                 </div>
             </form>
         </div>
@@ -257,7 +358,7 @@ $categorias = $conn->query("SELECT * FROM categoria ORDER BY nombre_categoria");
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title text-warning">Editar Producto</h5>
+                <h5 class="modal-title" style="color:#f59e0b;font-weight:700;"><i class="bi bi-pencil me-2"></i>Editar Producto</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <form method="POST" enctype="multipart/form-data">
@@ -266,7 +367,7 @@ $categorias = $conn->query("SELECT * FROM categoria ORDER BY nombre_categoria");
                 <div class="modal-body">
                     <div class="row g-3">
                         <div class="col-md-8">
-                            <label class="form-label">Nombre</label>
+                            <label class="form-label">Nombre *</label>
                             <input type="text" name="nombre" id="editNombre" class="form-control" required>
                         </div>
                         <div class="col-md-4">
@@ -276,38 +377,38 @@ $categorias = $conn->query("SELECT * FROM categoria ORDER BY nombre_categoria");
                         <div class="col-md-4">
                             <label class="form-label">Categoría</label>
                             <select name="id_categoria" id="editCat" class="form-select">
-                                <?php $categorias->data_seek(0); while ($c = $categorias->fetch_assoc()): ?>
+                                <?php $categorias->data_seek(0); while($c=$categorias->fetch_assoc()): ?>
                                 <option value="<?= $c['id_categoria'] ?>"><?= $c['nombre_categoria'] ?></option>
                                 <?php endwhile; ?>
                             </select>
                         </div>
                         <div class="col-md-4">
                             <label class="form-label">Precio (Bs.)</label>
-                            <input type="number" name="precio" id="editPrecio" class="form-control" step="0.01">
+                            <input type="number" name="precio" id="editPrecio" class="form-control" step="0.01" min="0">
                         </div>
                         <div class="col-md-4">
                             <label class="form-label">Stock</label>
-                            <input type="number" name="stock" id="editStock" class="form-control">
+                            <input type="number" name="stock" id="editStock" class="form-control" min="0">
                         </div>
                         <div class="col-12">
                             <label class="form-label">Descripción</label>
                             <textarea name="descripcion" id="editDesc" class="form-control" rows="3"></textarea>
                         </div>
                         <div class="col-md-8">
-                            <label class="form-label">Nueva imagen (opcional)</label>
+                            <label class="form-label">Nueva imagen <span style="color:#555;font-weight:400;">(opcional)</span></label>
                             <input type="file" name="imagen" class="form-control" accept="image/*">
                         </div>
-                        <div class="col-md-4 d-flex align-items-end">
+                        <div class="col-md-4 d-flex align-items-end pb-1">
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" name="estado" id="editEstado">
-                                <label class="form-check-label" for="editEstado">Producto activo</label>
+                                <label class="form-check-label" for="editEstado" style="font-size:0.875rem;">Producto activo</label>
                             </div>
                         </div>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-warning">Actualizar</button>
+                    <button type="button" class="btn-cancel" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn-warning-c"><i class="bi bi-check-lg me-1"></i>Guardar Cambios</button>
                 </div>
             </form>
         </div>
@@ -319,19 +420,21 @@ $categorias = $conn->query("SELECT * FROM categoria ORDER BY nombre_categoria");
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title text-danger">Eliminar Producto</h5>
+                <h5 class="modal-title" style="color:#ef4444;font-weight:700;"><i class="bi bi-trash me-2"></i>Eliminar Producto</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body">
-                <p>¿Eliminar el producto <strong id="elimNombre" class="text-danger"></strong>?</p>
-                <p class="text-muted small">Esta acción no se puede deshacer.</p>
+            <div class="modal-body" style="text-align:center;padding:32px 24px;">
+                <div style="font-size:3.5rem;margin-bottom:16px;">🗑️</div>
+                <p style="font-size:0.95rem;margin-bottom:8px;">¿Estás seguro de eliminar el producto</p>
+                <p><strong id="elimNombre" style="color:#ef4444;font-size:1.05rem;"></strong>?</p>
+                <p style="color:#555;font-size:0.82rem;margin-top:12px;">Esta acción eliminará el producto permanentemente y no se puede deshacer.</p>
             </div>
             <form method="POST">
                 <input type="hidden" name="accion" value="eliminar">
                 <input type="hidden" name="id_producto" id="elimId">
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-danger">Eliminar</button>
+                    <button type="button" class="btn-cancel" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn-danger-c"><i class="bi bi-trash me-1"></i>Sí, Eliminar</button>
                 </div>
             </form>
         </div>
@@ -355,6 +458,14 @@ document.getElementById('modalEliminar').addEventListener('show.bs.modal', funct
     const btn = e.relatedTarget;
     document.getElementById('elimId').value = btn.dataset.id;
     document.getElementById('elimNombre').textContent = btn.dataset.nombre;
+});
+
+// Búsqueda en tiempo real
+document.getElementById('searchProd').addEventListener('input', function() {
+    const val = this.value.toLowerCase();
+    document.querySelectorAll('#tablaProductos tbody tr').forEach(row => {
+        row.style.display = row.textContent.toLowerCase().includes(val) ? '' : 'none';
+    });
 });
 </script>
 </body>

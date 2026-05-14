@@ -1,39 +1,30 @@
 <?php
 session_start();
-if(!isset($_SESSION['usuario_id']) || $_SESSION['usuario_rol'] !== 'admin') exit;
+if(!isset($_SESSION['usuario_id']) || !in_array($_SESSION['usuario_rol'], ['admin','super_admin'])) exit;
 require_once '../../config/db.php';
 
 $id = intval($_GET['id']);
-$detalles = $conn->prepare("SELECT dv.*, p.nombre, p.marca, p.imagen FROM detalle_venta dv JOIN producto p ON dv.id_producto=p.id_producto WHERE dv.id_venta=?");
+
+$detalles = $conn->prepare("SELECT dv.*, p.nombre, p.marca, p.imagen, p.precio FROM detalle_venta dv JOIN producto p ON dv.id_producto=p.id_producto WHERE dv.id_venta=?");
 $detalles->bind_param("i", $id);
 $detalles->execute();
 $detalles = $detalles->get_result();
 
-$venta = $conn->prepare("SELECT v.*, u.nombre as cliente FROM venta v JOIN usuario u ON v.id_usuario=u.id_usuario WHERE v.id_venta=?");
-$venta->bind_param("i", $id);
-$venta->execute();
-$venta = $venta->get_result()->fetch_assoc();
-?>
-<div class="mb-3">
-    <p class="text-muted mb-1">Pedido <strong class="text-white">#<?= $venta['id_venta'] ?></strong> — Cliente: <strong class="text-white"><?= htmlspecialchars($venta['cliente']) ?></strong></p>
-    <p class="text-muted mb-0">Fecha: <?= date('d/m/Y H:i', strtotime($venta['fecha'])) ?></p>
-</div>
-<?php while($d = $detalles->fetch_assoc()): ?>
-<div class="detalle-item d-flex align-items-center gap-3">
-    <div style="width:45px;height:45px;background:#111;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.5rem;overflow:hidden;">
+if($detalles->num_rows === 0): ?>
+<div style="text-align:center;color:#444;padding:32px;">No hay productos en esta venta</div>
+<?php else: while($d = $detalles->fetch_assoc()): ?>
+<div style="background:#111120;border-radius:10px;padding:14px 16px;margin-bottom:8px;display:flex;align-items:center;gap:12px;">
+    <div style="width:46px;height:46px;border-radius:8px;background:#0d0d1a;display:flex;align-items:center;justify-content:center;font-size:1.3rem;overflow:hidden;border:1px solid #1a1a2e;flex-shrink:0;">
         <?php if($d['imagen']): ?>
             <img src="../../assets/<?= $d['imagen'] ?>" style="width:100%;height:100%;object-fit:cover;">
-        <?php else: ?>
-            📦
-        <?php endif; ?>
+        <?php else: ?>📦<?php endif; ?>
     </div>
-    <div class="flex-grow-1">
-        <p class="fw-bold mb-0"><?= htmlspecialchars($d['nombre']) ?></p>
-        <small class="text-muted"><?= htmlspecialchars($d['marca']) ?> — <?= $d['cantidad'] ?> und.</small>
+    <div style="flex:1;min-width:0;">
+        <div style="font-weight:600;font-size:0.875rem;"><?= htmlspecialchars($d['nombre']) ?></div>
+        <div style="font-size:0.75rem;color:#555;margin-top:2px;"><?= htmlspecialchars($d['marca']) ?> — <?= $d['cantidad'] ?> unidad<?= $d['cantidad']>1?'es':'' ?> × Bs. <?= number_format($d['precio'],2) ?></div>
     </div>
-    <span style="color:#00ff88">Bs. <?= number_format($d['subtotal'], 2) ?></span>
+    <div style="text-align:right;flex-shrink:0;">
+        <div style="color:#00ff88;font-weight:700;">Bs. <?= number_format($d['subtotal'],2) ?></div>
+    </div>
 </div>
-<?php endwhile; ?>
-<div class="mt-3 text-end">
-    <strong style="color:#00ff88;font-size:1.2rem;">Total: Bs. <?= number_format($venta['total'], 2) ?></strong>
-</div>
+<?php endwhile; endif; ?>
