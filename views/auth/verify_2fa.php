@@ -326,15 +326,26 @@ if (!isset($_SESSION['temp_user'])) {
                 código de seguridad generado para tu cuenta.</p>
 
             <?php if (isset($_SESSION['error'])): ?>
-                <div class="alert-err"><i
-                        class="bi bi-exclamation-circle-fill"></i><?= $_SESSION['error'];
-                        unset($_SESSION['error']); ?>
+                <div class="alert-err"><i class="bi bi-exclamation-circle-fill"></i><?= $_SESSION['error'];
+                unset($_SESSION['error']); ?>
                 </div>
             <?php endif; ?>
 
-            <!-- CÓDIGO VISIBLE -->
+
+
+
             <!-- CÓDIGO: visible solo en modo demo -->
-            <?php if (!($_SESSION['correo_enviado'] ?? false)): ?>
+            <?php if ($_SESSION['usar_totp'] ?? false): ?>
+                <!-- MODO TOTP -->
+                <div class="code-box" style="background:rgba(59,130,246,0.06);border-color:rgba(59,130,246,0.2);">
+                    <div class="code-label" style="color:#3b82f6;">Google Authenticator</div>
+                    <div style="font-size:3rem;margin:12px 0;">📱</div>
+                    <div style="font-size:0.875rem;color:#aaa;">Abre tu app y busca <strong style="color:#fff">GamerZone
+                            Bolivia</strong></div>
+                    <div class="code-hint">El código cambia cada 30 segundos</div>
+                </div>
+            <?php elseif (!($_SESSION['correo_enviado'] ?? false)): ?>
+                <!-- MODO DEMO -->
                 <div class="code-box">
                     <div class="code-label">Tu código de acceso</div>
                     <div class="code-digits">
@@ -352,6 +363,17 @@ if (!isset($_SESSION['temp_user'])) {
                     </div>
                 </div>
             <?php else: ?>
+            <!-- MODO CORREO -->
+            <div class="code-box" style="background:rgba(59,130,246,0.06);border-color:rgba(59,130,246,0.2);">
+                <div class="code-label" style="color:#3b82f6;">Código enviado al correo</div>
+                <div style="font-size:2rem;margin:12px 0;">📧</div>
+                <div style="font-size:0.875rem;color:#aaa;"><?= $_SESSION['msg_2fa'] ?? '' ?></div>
+                <div class="code-hint">Revisa tu bandeja de entrada y spam</div>
+            </div>
+            <?php endif; ?>
+
+
+
                 <div class="code-box" style="background:rgba(59,130,246,0.06);border-color:rgba(59,130,246,0.2);">
                     <div class="code-label" style="color:#3b82f6;">Código enviado al correo</div>
                     <div style="font-size:2rem;margin:12px 0;">📧</div>

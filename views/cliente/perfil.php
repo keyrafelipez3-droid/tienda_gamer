@@ -691,19 +691,141 @@ $cant_carrito = array_sum($_SESSION['carrito'] ?? []);
                         </div>
                         <div class="form-card mt-4">
                             <div class="form-card-title"><i class="bi bi-phone me-2"
-                                    style="color:#00ff88"></i>Autenticación 2FA</div>
-                            <div class="info-row">
-                                <div>
-                                    <div class="info-label">Estado 2FA</div>
-                                    <div class="info-value" style="color:#00ff88;margin-top:4px;"><i
-                                            class="bi bi-check-circle-fill me-1"></i>Activo en tu cuenta</div>
+                                    style="color:#00ff88"></i>Autenticación 2FA con QR</div>
+                            <?php
+                            require_once '../../config/totp.php';
+
+                            // Activar TOTP
+                            if (isset($_POST['activar_totp'])) {
+                                $secret = generarSecretTOTP();
+                                $stmt_s = $conn->prepare("UPDATE usuario SET totp_secret=? WHERE id_usuario=?");
+                                $stmt_s->bind_param("si", $secret, $id_usuario);
+                                $stmt_s->execute();
+                                $user['totp_secret'] = $secret;
+                                $user['totp_activo'] = 0;
+                            }
+
+                            // Confirmar TOTP
+                            if (isset($_POST['confirmar_totp'])) {
+                                $codigo = trim($_POST['totp_codigo']);
+                                $secret = $user['totp_secret'];
+                                if (verificarCodigoTOTP($secret, $codigo)) {
+                                    $stmt_s = $conn->prepare("UPDATE usuario SET totp_activo=1 WHERE id_usuario=?");
+                                    $stmt_s->bind_param("i", $id_usuario);
+                                    $stmt_s->execute();
+                                    $user['totp_activo'] = 1;
+                                    $_SESSION['success'] = '¡Google Authenticator activado correctamente!';
+                                    header('Location: perfil.php');
+                                    exit;
+                                } else {
+                                    $_SESSION['error'] = 'Código incorrecto. Escanea el QR e intenta de nuevo.';
+                                    header('Location: perfil.php');
+                                    exit;
+                                }
+                            }
+
+                            // Desactivar TOTP
+                            if (isset($_POST['desactivar_totp'])) {
+                                $stmt_s = $conn->prepare("UPDATE usuario SET totp_secret=NULL, totp_activo=0 WHERE id_usuario=?");
+                                $stmt_s->bind_param("i", $id_usuario);
+                                $stmt_s->execute();
+                                $user['totp_secret'] = null;
+                                $user['totp_activo'] = 0;
+                                $_SESSION['success'] = 'Google Authenticator desactivado.';
+                                header('Location: perfil.php');
+                                exit;
+                            }
+                            ?>
+
+                            <?php if ($user['totp_activo']): ?>
+                                <!-- TOTP ACTIVO -->
+                                <div class="info-row">
+                                    <div>
+                                        <div class="info-label">Estado Google Authenticator</div>
+                                        <div style="color:#00ff88;font-weight:700;margin-top:4px;font-size:0.875rem;">
+                                            <i class="bi bi-shield-check me-1"></i>Activo y configurado
+                                        </div>
+                                    </div>
+                                    <span
+                                        style="background:rgba(0,255,136,0.08);border:1px solid rgba(0,255,136,0.2);color:#00ff88;border-radius:8px;padding:4px 12px;font-size:0.78rem;font-weight:600;">✅
+                                        Protegido</span>
                                 </div>
-                                <span
-                                    style="background:rgba(0,255,136,0.08);border:1px solid rgba(0,255,136,0.2);color:#00ff88;border-radius:8px;padding:4px 12px;font-size:0.78rem;font-weight:600;">Protegido</span>
-                            </div>
-                            <p style="color:#555;font-size:0.82rem;margin-top:12px;line-height:1.6;">Tu cuenta está
-                                protegida con verificación en dos pasos. Cada vez que inicies sesión recibirás un código
-                                de acceso único.</p>
+                                <p style="color:#555;font-size:0.82rem;margin-top:12px;line-height:1.6;margin-bottom:16px;">
+                                    Tu cuenta usa Google Authenticator para el código de verificación. Cada 30 segundos se
+                                    genera un nuevo código en tu app.
+                                </p>
+                                <form method="POST">
+                                    <button type="submit" name="desactivar_totp"
+                                        style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);color:#ef4444;border-radius:8px;padding:8px 16px;font-size:0.82rem;cursor:pointer;transition:all 0.2s;">
+                                        <i class="bi bi-x-circle me-1"></i>Desactivar Google Authenticator
+                                    </button>
+                                </form>
+
+                            <?php elseif ($user['totp_secret']): ?>
+                                <!-- ESCANEAR QR -->
+                                <div style="text-align:center;padding:16px 0;">
+                                    <p style="color:#aaa;font-size:0.875rem;margin-bottom:16px;">
+                                        <strong style="color:#fff">Paso 1:</strong> Descarga <strong
+                                            style="color:#00ff88">Google Authenticator</strong> en tu celular<br>
+                                        <strong style="color:#fff">Paso 2:</strong> Escanea el código QR<br>
+                                        <strong style="color:#fff">Paso 3:</strong> Ingresa el código de 6 dígitos para
+                                        confirmar
+                                    </p>
+                                    <?php
+                                    try {
+                                        $qr_url = getQRCodeUrl($user['correo'], $user['totp_secret']);
+                                        echo "<img src='$qr_url' style='width:200px;height:200px;border-radius:12px;border:3px solid rgba(0,255,136,0.3);padding:8px;background:#fff;margin-bottom:16px;'>";
+                                    } catch (Exception $e) {
+                                        echo "<div style='color:#ef4444;font-size:0.82rem;'>Error generando QR: " . $e->getMessage() . "</div>";
+                                    }
+                                    ?>
+                                    <form method="POST">
+                                        <div
+                                            style="display:flex;gap:10px;justify-content:center;align-items:center;flex-wrap:wrap;">
+                                            <input type="text" name="totp_codigo" placeholder="Código de 6 dígitos"
+                                                style="background:#111120;border:1px solid rgba(0,255,136,0.2);color:#fff;border-radius:10px;padding:10px 16px;font-size:1.1rem;font-weight:700;text-align:center;letter-spacing:8px;width:200px;"
+                                                maxlength="6" pattern="[0-9]{6}" inputmode="numeric" required>
+                                            <button type="submit" name="confirmar_totp" class="btn-save">
+                                                <i class="bi bi-check-lg"></i> Confirmar
+                                            </button>
+                                        </div>
+                                    </form>
+                                    <form method="POST" style="margin-top:12px;">
+                                        <button type="submit" name="activar_totp"
+                                            style="background:transparent;border:none;color:#555;font-size:0.78rem;cursor:pointer;">
+                                            <i class="bi bi-arrow-repeat me-1"></i>Generar nuevo QR
+                                        </button>
+                                    </form>
+                                </div>
+
+                            <?php else: ?>
+                                <!-- SIN TOTP -->
+                                <div style="text-align:center;padding:16px 0;">
+                                    <div style="font-size:3rem;margin-bottom:12px;">📱</div>
+                                    <p style="color:#555;font-size:0.875rem;margin-bottom:20px;line-height:1.6;">
+                                        Activa Google Authenticator para mayor seguridad.<br>
+                                        Genera códigos de verificación sin necesidad de internet.
+                                    </p>
+                                    <div
+                                        style="display:flex;gap:10px;justify-content:center;margin-bottom:16px;flex-wrap:wrap;">
+                                        <a href="https://play.google.com/store/apps/details?id=com.google.android.apps.authenticator2"
+                                            target="_blank"
+                                            style="background:#0d0d1a;border:1px solid #1a1a2e;color:#aaa;border-radius:8px;padding:8px 14px;font-size:0.78rem;text-decoration:none;display:flex;align-items:center;gap:6px;">
+                                            <i class="bi bi-google-play"></i> Google Play
+                                        </a>
+                                        <a href="https://apps.apple.com/app/google-authenticator/id388497605"
+                                            target="_blank"
+                                            style="background:#0d0d1a;border:1px solid #1a1a2e;color:#aaa;border-radius:8px;padding:8px 14px;font-size:0.78rem;text-decoration:none;display:flex;align-items:center;gap:6px;">
+                                            <i class="bi bi-apple"></i> App Store
+                                        </a>
+                                    </div>
+                                    <form method="POST">
+                                        <button type="submit" name="activar_totp" class="btn-save">
+                                            <i class="bi bi-qr-code-scan me-1"></i> Configurar Google Authenticator
+                                        </button>
+                                    </form>
+                                </div>
+                            <?php endif; ?>
                         </div>
                     </div>
 
