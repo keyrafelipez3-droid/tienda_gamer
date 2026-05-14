@@ -14,11 +14,24 @@ $stmt->execute();
 $p = $stmt->get_result()->fetch_assoc();
 if(!$p) { header('Location: productos.php'); exit; }
 
+// Obtener todas las imágenes
+$imgs_stmt = $conn->prepare("SELECT * FROM producto_imagen WHERE id_producto=? ORDER BY es_principal DESC, orden ASC");
+$imgs_stmt->bind_param("i", $id);
+$imgs_stmt->execute();
+$todas_imgs = $imgs_stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+
 if(isset($_POST['agregar_carrito'])) {
     $cant = intval($_POST['cantidad'] ?? 1);
     if(!isset($_SESSION['carrito'])) $_SESSION['carrito'] = [];
-    $_SESSION['carrito'][$id] = ($_SESSION['carrito'][$id] ?? 0) + $cant;
-    $_SESSION['msg_carrito'] = "¡{$p['nombre']} agregado al carrito!";
+    $en_carrito = $_SESSION['carrito'][$id] ?? 0;
+    if($en_carrito + $cant > $p['stock']) {
+        $_SESSION['msg_carrito'] = "Solo hay {$p['stock']} unidades disponibles.";
+        $_SESSION['msg_tipo'] = 'err';
+    } else {
+        $_SESSION['carrito'][$id] = $en_carrito + $cant;
+        $_SESSION['msg_carrito'] = "¡{$p['nombre']} agregado al carrito!";
+        $_SESSION['msg_tipo'] = 'ok';
+    }
     header('Location: producto_detalle.php?id=' . $id); exit;
 }
 
@@ -53,11 +66,12 @@ $relacionados = $rel->get_result();
 
 $cant_carrito = array_sum($_SESSION['carrito'] ?? []);
 
-// Helper para imagen
 function imgSrc($img, $prefix='../../assets/') {
     if(!$img) return null;
     return (strpos($img,'http')===0) ? $img : $prefix.$img;
 }
+
+$img_principal = count($todas_imgs) > 0 ? imgSrc($todas_imgs[0]['imagen']) : imgSrc($p['imagen']);
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -88,8 +102,18 @@ function imgSrc($img, $prefix='../../assets/') {
         .breadcrumb-nav a{color:#555;text-decoration:none;}
         .breadcrumb-nav a:hover{color:#00ff88;}
         .breadcrumb-nav span{color:#777;}
-        .img-main{background:#0d0d1a;border:1px solid #1a1a2e;border-radius:20px;height:420px;display:flex;align-items:center;justify-content:center;font-size:8rem;overflow:hidden;position:relative;}
-        .img-main img{width:100%;height:100%;object-fit:contain;padding:20px;}
+
+        /* GALERÍA */
+        .img-main{background:#0d0d1a;border:1px solid #1a1a2e;border-radius:20px;height:400px;display:flex;align-items:center;justify-content:center;font-size:8rem;overflow:hidden;position:relative;margin-bottom:12px;}
+        .img-main img{width:100%;height:100%;object-fit:contain;padding:20px;transition:opacity 0.3s;}
+        .img-thumbs{display:flex;gap:8px;flex-wrap:wrap;}
+        .img-thumb{width:70px;height:70px;border-radius:10px;background:#0d0d1a;border:2px solid #1a1a2e;overflow:hidden;cursor:pointer;transition:all 0.2s;flex-shrink:0;}
+        .img-thumb:hover{border-color:rgba(0,255,136,0.5);}
+        .img-thumb.active{border-color:#00ff88;}
+        .img-thumb img{width:100%;height:100%;object-fit:cover;}
+        .img-count{position:absolute;bottom:12px;right:12px;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);border-radius:8px;padding:4px 10px;font-size:0.72rem;color:#aaa;}
+
+        /* INFO */
         .prod-tag{display:inline-block;background:rgba(0,255,136,0.08);border:1px solid rgba(0,255,136,0.2);color:#00ff88;border-radius:6px;padding:4px 12px;font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;}
         .prod-title{font-size:1.8rem;font-weight:800;line-height:1.2;margin-bottom:8px;}
         .prod-marca{font-size:0.875rem;color:#555;margin-bottom:16px;}
@@ -116,9 +140,17 @@ function imgSrc($img, $prefix='../../assets/') {
         .btn-fav-main{width:50px;height:50px;border-radius:12px;border:1px solid #1a1a2e;background:#0d0d1a;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.2s;color:#555;font-size:1.2rem;flex-shrink:0;}
         .btn-fav-main:hover,.btn-fav-main.active{border-color:#ff4466;color:#ff4466;background:rgba(255,68,102,0.08);}
         .action-row{display:flex;gap:10px;align-items:center;}
+        .guarantee-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:20px;}
+        .guarantee-item{background:#0d0d1a;border:1px solid #1a1a2e;border-radius:10px;padding:12px;text-align:center;}
+        .guarantee-item i{color:#00ff88;font-size:1.2rem;display:block;margin-bottom:4px;}
+        .guarantee-item span{font-size:0.72rem;color:#555;}
+
+        /* TOAST */
         .toast-container{position:fixed;bottom:24px;right:24px;z-index:9999;}
-        .toast-msg{background:#0d1f0d;border:1px solid rgba(0,255,136,0.3);border-radius:12px;padding:14px 20px;display:flex;align-items:center;gap:12px;font-size:0.875rem;box-shadow:0 8px 32px rgba(0,0,0,0.4);animation:slideIn 0.3s ease;}
+        .toast-msg{background:#0d1f0d;border:1px solid rgba(0,255,136,0.3);border-radius:12px;padding:14px 20px;display:flex;align-items:center;gap:12px;font-size:0.875rem;box-shadow:0 8px 32px rgba(0,0,0,0.4);animation:slideIn 0.3s ease;min-width:280px;}
         @keyframes slideIn{from{transform:translateX(100px);opacity:0;}to{transform:translateX(0);opacity:1;}}
+
+        /* RELACIONADOS */
         .section-title{font-size:1.2rem;font-weight:800;margin-bottom:20px;}
         .section-title span{color:#00ff88;}
         .rel-card{background:#0d0d1a;border:1px solid #1a1a2e;border-radius:14px;overflow:hidden;transition:all 0.3s;text-decoration:none;display:block;color:#fff;}
@@ -129,10 +161,6 @@ function imgSrc($img, $prefix='../../assets/') {
         .rel-nombre{font-weight:700;font-size:0.875rem;margin-bottom:4px;}
         .rel-precio{color:#00ff88;font-weight:800;font-size:1rem;}
         .divider{border:none;border-top:1px solid #1a1a2e;margin:40px 0;}
-        .guarantee-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:20px;}
-        .guarantee-item{background:#0d0d1a;border:1px solid #1a1a2e;border-radius:10px;padding:12px;text-align:center;}
-        .guarantee-item i{color:#00ff88;font-size:1.2rem;display:block;margin-bottom:4px;}
-        .guarantee-item span{font-size:0.72rem;color:#555;}
     </style>
 </head>
 <body>
@@ -162,12 +190,12 @@ function imgSrc($img, $prefix='../../assets/') {
 
 <?php if(isset($_SESSION['msg_carrito'])): ?>
 <div class="toast-container">
-    <div class="toast-msg" id="toastMsg">
-        <i class="bi bi-cart-check-fill" style="color:#00ff88"></i>
+    <div class="toast-msg" id="toastMsg" style="<?= ($_SESSION['msg_tipo']??'ok')==='err'?'background:#2a0d0d;border-color:rgba(239,68,68,0.3);':'' ?>">
+        <i class="bi <?= ($_SESSION['msg_tipo']??'ok')==='ok'?'bi-cart-check-fill':'bi-exclamation-circle-fill' ?>" style="color:<?= ($_SESSION['msg_tipo']??'ok')==='ok'?'#00ff88':'#ef4444' ?>"></i>
         <span><?= $_SESSION['msg_carrito'] ?></span>
     </div>
 </div>
-<?php unset($_SESSION['msg_carrito']); ?>
+<?php unset($_SESSION['msg_carrito'],$_SESSION['msg_tipo']); ?>
 <?php endif; ?>
 
 <div class="content">
@@ -179,14 +207,29 @@ function imgSrc($img, $prefix='../../assets/') {
         </div>
 
         <div class="row g-5">
-            <!-- IMAGEN -->
+            <!-- GALERÍA -->
             <div class="col-lg-5">
-                <div class="img-main">
-                    <?php $img = imgSrc($p['imagen']); ?>
-                    <?php if($img): ?>
-                        <img src="<?= $img ?>" alt="<?= htmlspecialchars($p['nombre']) ?>">
-                    <?php else: ?>📦<?php endif; ?>
+                <div class="img-main" id="imgMainBox">
+                    <?php if($img_principal): ?>
+                        <img src="<?= $img_principal ?>" alt="<?= htmlspecialchars($p['nombre']) ?>" id="imgMainSrc">
+                    <?php else: ?>
+                        <span>📦</span>
+                    <?php endif; ?>
+                    <?php if(count($todas_imgs) > 1): ?>
+                    <div class="img-count"><i class="bi bi-images me-1"></i><?= count($todas_imgs) ?> fotos</div>
+                    <?php endif; ?>
                 </div>
+                <?php if(count($todas_imgs) > 1): ?>
+                <div class="img-thumbs">
+                    <?php foreach($todas_imgs as $i => $img_item):
+                        $src_thumb = imgSrc($img_item['imagen']);
+                    ?>
+                    <div class="img-thumb <?= $i===0?'active':'' ?>" onclick="cambiarImg('<?= $src_thumb ?>', this)">
+                        <img src="<?= $src_thumb ?>" alt="">
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+                <?php endif; ?>
             </div>
 
             <!-- INFO -->
@@ -230,7 +273,7 @@ function imgSrc($img, $prefix='../../assets/') {
                 </div>
 
                 <?php if($p['stock'] > 0): ?>
-                <form method="POST">
+                <form method="POST" id="formCarrito">
                     <div class="qty-row">
                         <span class="qty-label">Cantidad:</span>
                         <div class="qty-control">
@@ -238,6 +281,7 @@ function imgSrc($img, $prefix='../../assets/') {
                             <input type="number" name="cantidad" id="cantidad" class="qty-input" value="1" min="1" max="<?= $p['stock'] ?>">
                             <button type="button" class="qty-btn" onclick="cambiarCant(1)"><i class="bi bi-plus"></i></button>
                         </div>
+                        <span style="font-size:0.78rem;color:#555;">Máx: <?= $p['stock'] ?> und.</span>
                     </div>
                     <div class="action-row">
                         <button type="submit" name="agregar_carrito" class="btn-add-main">
@@ -292,7 +336,7 @@ function imgSrc($img, $prefix='../../assets/') {
                 <a href="producto_detalle.php?id=<?= $r['id_producto'] ?>" class="rel-card">
                     <div class="rel-img">
                         <?php if($r_img): ?>
-                            <img src="<?= $r_img ?>" alt="<?= htmlspecialchars($r['nombre']) ?>">
+                            <img src="<?= $r_img ?>" alt="">
                         <?php else: ?>📦<?php endif; ?>
                     </div>
                     <div class="rel-body">
@@ -310,6 +354,11 @@ function imgSrc($img, $prefix='../../assets/') {
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
+function cambiarImg(src, thumb) {
+    document.getElementById('imgMainSrc').src = src;
+    document.querySelectorAll('.img-thumb').forEach(t => t.classList.remove('active'));
+    thumb.classList.add('active');
+}
 function cambiarCant(delta) {
     const input = document.getElementById('cantidad');
     const max   = parseInt(input.max);
