@@ -2,9 +2,10 @@
 session_start();
 require_once '../config/db.php';
 
-$action = $_POST['action'] ?? '';
+$action = $_POST['action'] ?? $_GET['action'] ?? '';
+
 // ═══════════════════════════════
-//  REGISTRO
+//  REGISTRO — solo clientes
 // ═══════════════════════════════
 if ($action === 'register') {
     $nombre    = trim($_POST['nombre']);
@@ -12,39 +13,37 @@ if ($action === 'register') {
     $contrasena = $_POST['contrasena'];
     $confirmar  = $_POST['confirmar'];
 
-    // Validaciones
     if (empty($nombre) || empty($correo) || empty($contrasena)) {
         $_SESSION['error'] = 'Todos los campos son obligatorios.';
-        header('Location: ../views/auth/register.php');
-        exit;
+        header('Location: ../views/auth/register.php'); exit;
     }
     if ($contrasena !== $confirmar) {
         $_SESSION['error'] = 'Las contraseñas no coinciden.';
-        header('Location: ../views/auth/register.php');
-        exit;
+        header('Location: ../views/auth/register.php'); exit;
     }
     if (strlen($contrasena) < 6) {
         $_SESSION['error'] = 'La contraseña debe tener al menos 6 caracteres.';
-        header('Location: ../views/auth/register.php');
-        exit;
+        header('Location: ../views/auth/register.php'); exit;
     }
-    // Verificar correo duplicado
+    if (!filter_var($correo, FILTER_VALIDATE_EMAIL)) {
+        $_SESSION['error'] = 'El correo no tiene un formato válido.';
+        header('Location: ../views/auth/register.php'); exit;
+    }
+
     $check = $conn->prepare("SELECT id_usuario FROM usuario WHERE correo = ?");
     $check->bind_param("s", $correo);
     $check->execute();
     $check->store_result();
     if ($check->num_rows > 0) {
         $_SESSION['error'] = 'Este correo ya está registrado.';
-        header('Location: ../views/auth/register.php');
-        exit;
+        header('Location: ../views/auth/register.php'); exit;
     }
 
-    // Encriptar contraseña
     $hash = password_hash($contrasena, PASSWORD_DEFAULT);
+    $rol = 'cliente'; // siempre cliente desde registro público
 
-    // Insertar usuario
-    $stmt = $conn->prepare("INSERT INTO usuario (nombre, correo, contrasena, rol) VALUES (?, ?, ?, 'cliente')");
-    $stmt->bind_param("sss", $nombre, $correo, $hash);
+    $stmt = $conn->prepare("INSERT INTO usuario (nombre, correo, contrasena, rol) VALUES (?, ?, ?, ?)");
+    $stmt->bind_param("ssss", $nombre, $correo, $hash, $rol);
 
     if ($stmt->execute()) {
         $_SESSION['success'] = '¡Cuenta creada exitosamente! Ya puedes iniciar sesión.';
@@ -71,21 +70,20 @@ if ($action === 'login') {
 
     if (!$user || !password_verify($contrasena, $user['contrasena'])) {
         $_SESSION['error'] = 'Correo o contraseña incorrectos.';
-        header('Location: ../views/auth/login.php');
-        exit;
+        header('Location: ../views/auth/login.php'); exit;
     }
-    // Generar código 2FA
+
     $codigo = strval(rand(100000, 999999));
     $_SESSION['codigo_2fa'] = $codigo;
     $_SESSION['temp_user']  = $user;
-    // Guardar código en BD
+
     $upd = $conn->prepare("UPDATE usuario SET codigo_2fa = ?, estado_2fa = 1 WHERE id_usuario = ?");
     $upd->bind_param("si", $codigo, $user['id_usuario']);
     $upd->execute();
 
-    header('Location: ../views/auth/verify_2fa.php');
-    exit;
+    header('Location: ../views/auth/verify_2fa.php'); exit;
 }
+
 // ═══════════════════════════════
 //  VERIFICAR 2FA
 // ═══════════════════════════════
@@ -95,27 +93,22 @@ if ($action === 'verify_2fa') {
     $user             = $_SESSION['temp_user'] ?? null;
 
     if (!$user) {
-        header('Location: ../views/auth/login.php');
-        exit;
+        header('Location: ../views/auth/login.php'); exit;
     }
 
     if ($codigo_ingresado === $codigo_correcto) {
-        // Limpiar temporales
-        unset($_SESSION['codigo_2fa']);
-        unset($_SESSION['temp_user']);
+        unset($_SESSION['codigo_2fa'], $_SESSION['temp_user']);
 
-        // Iniciar sesión real
-        $_SESSION['usuario_id']  = $user['id_usuario'];
+        $_SESSION['usuario_id']     = $user['id_usuario'];
         $_SESSION['usuario_nombre'] = $user['nombre'];
-        $_SESSION['usuario_rol'] = $user['rol'];
+        $_SESSION['usuario_rol']    = $user['rol'];
 
-        // Limpiar 2FA en BD
         $upd = $conn->prepare("UPDATE usuario SET codigo_2fa = NULL, estado_2fa = 0 WHERE id_usuario = ?");
         $upd->bind_param("i", $user['id_usuario']);
         $upd->execute();
 
         // Redirigir según rol
-        if ($user['rol'] === 'admin') {
+        if ($user['rol'] === 'super_admin' || $user['rol'] === 'admin') {
             header('Location: ../views/admin/dashboard.php');
         } else {
             header('Location: ../views/cliente/inicio.php');
@@ -126,12 +119,12 @@ if ($action === 'verify_2fa') {
     }
     exit;
 }
+
 // ═══════════════════════════════
 //  LOGOUT
 // ═══════════════════════════════
 if ($action === 'logout') {
     session_destroy();
-    header('Location: ../../index.php');
-    exit;
+    header('Location: ../../index.php'); exit;
 }
 ?>
