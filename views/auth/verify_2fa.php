@@ -1,411 +1,380 @@
-<?php
+﻿<?php
 session_start();
 if (!isset($_SESSION['temp_user'])) {
     header('Location: login.php');
     exit;
 }
+$usar_totp      = $_SESSION['usar_totp']      ?? false;
+$correo_enviado = $_SESSION['correo_enviado'] ?? false;
+$codigo_demo    = $_SESSION['codigo_2fa']     ?? '';
+$nombre         = $_SESSION['temp_user']['nombre'] ?? '';
 ?>
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Verificación 2FA - GamerZone</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>Verificación — GamerZone</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
-        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@600;700;800&display=swap" rel="stylesheet">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --bg:     #080808;
+            --card:   #111111;
+            --raised: #181818;
+            --border: #252525;
+            --green:  #d4a843;
+            --blue:   #3b82f6;
+            --red:    #ef4444;
+            --text:   #f0f0f8;
+            --sub:    #8888a8;
+            --muted:  #44445a;
         }
-
         body {
-            background: #070711;
-            color: #fff;
+            background: var(--bg);
+            color: var(--text);
             font-family: 'Inter', sans-serif;
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
+            padding: 24px 16px;
             position: relative;
             overflow: hidden;
         }
-
         body::before {
             content: '';
             position: absolute;
-            top: -20%;
-            right: -10%;
-            width: 500px;
-            height: 500px;
-            background: radial-gradient(circle, rgba(0, 255, 136, 0.06) 0%, transparent 70%);
-            border-radius: 50%;
+            top: -20%; right: -5%;
+            width: 500px; height: 500px;
+            background: radial-gradient(circle, rgba(212,168,67,.05) 0%, transparent 65%);
             pointer-events: none;
         }
+        .wrap { width: 100%; max-width: 400px; position: relative; z-index: 1; }
 
-        .auth-wrapper {
-            width: 100%;
-            max-width: 420px;
-            padding: 20px;
-            position: relative;
-            z-index: 1;
-        }
-
-        .auth-card {
-            background: #0d0d1a;
-            border: 1px solid #1a1a2e;
-            border-radius: 24px;
-            padding: 40px;
-        }
-
-        .brand {
-            font-size: 1.8rem;
-            font-weight: 800;
-            color: #00ff88;
-            text-align: center;
-            margin-bottom: 24px;
-            letter-spacing: 1px;
-        }
-
-        .brand span {
-            color: #fff;
-        }
-
-        .shield-icon {
-            width: 72px;
-            height: 72px;
-            background: rgba(0, 255, 136, 0.08);
-            border: 1px solid rgba(0, 255, 136, 0.2);
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border);
             border-radius: 20px;
+            padding: 36px 32px;
+        }
+        .brand {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--green);
+            text-align: center;
+            margin-bottom: 28px;
+            letter-spacing: -.5px;
+        }
+        .brand span { color: var(--text); }
+
+        /* shield visual — CSS only */
+        .shield-wrap {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        .shield {
+            width: 56px;
+            height: 56px;
+            background: linear-gradient(135deg, rgba(212,168,67,.1), rgba(212,168,67,.05));
+            border: 1.5px solid rgba(212,168,67,.25);
+            border-radius: 14px;
             display: flex;
             align-items: center;
             justify-content: center;
-            margin: 0 auto 20px;
-            font-size: 2rem;
+            font-size: 1.4rem;
+            color: var(--green);
+        }
+        .shield.blue {
+            background: linear-gradient(135deg, rgba(59,130,246,.1), rgba(59,130,246,.05));
+            border-color: rgba(59,130,246,.25);
+            color: var(--blue);
         }
 
-        .auth-title {
-            font-size: 1.3rem;
-            font-weight: 800;
+        .v-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.15rem;
+            font-weight: 700;
             text-align: center;
             margin-bottom: 6px;
         }
-
-        .auth-sub {
-            color: #555;
-            font-size: 0.875rem;
+        .v-sub {
+            font-size: 0.82rem;
+            color: var(--sub);
             text-align: center;
-            margin-bottom: 28px;
+            margin-bottom: 24px;
             line-height: 1.5;
         }
+        .v-sub strong { color: var(--text); }
 
-        .code-box {
-            background: linear-gradient(135deg, rgba(0, 255, 136, 0.06), rgba(0, 204, 106, 0.03));
-            border: 1px solid rgba(0, 255, 136, 0.2);
-            border-radius: 16px;
-            padding: 24px;
-            text-align: center;
-            margin-bottom: 28px;
+        .alert-err {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 11px 14px;
+            border-radius: 10px;
+            font-size: 0.82rem;
+            margin-bottom: 18px;
+            background: rgba(239,68,68,.07);
+            border: 1px solid rgba(239,68,68,.2);
+            color: #f87171;
+        }
+
+        /* code display box */
+        .code-panel {
+            border-radius: 14px;
+            padding: 20px;
+            margin-bottom: 24px;
             position: relative;
             overflow: hidden;
         }
-
-        .code-box::before {
+        .code-panel::before {
             content: '';
             position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
+            top: 0; left: 0; right: 0;
             height: 2px;
-            background: linear-gradient(90deg, transparent, #00ff88, transparent);
         }
+        .code-panel.green {
+            background: rgba(212,168,67,.05);
+            border: 1px solid rgba(212,168,67,.15);
+        }
+        .code-panel.green::before { background: linear-gradient(90deg, transparent, var(--green), transparent); }
+        .code-panel.blue {
+            background: rgba(59,130,246,.05);
+            border: 1px solid rgba(59,130,246,.15);
+        }
+        .code-panel.blue::before { background: linear-gradient(90deg, transparent, var(--blue), transparent); }
 
-        .code-label {
-            font-size: 0.72rem;
-            color: #555;
+        .panel-label {
+            font-size: 0.65rem;
+            font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 2px;
-            margin-bottom: 12px;
+            letter-spacing: 1.5px;
+            margin-bottom: 14px;
+            text-align: center;
         }
+        .panel-label.green { color: var(--green); }
+        .panel-label.blue  { color: var(--blue); }
 
         .code-digits {
             display: flex;
             justify-content: center;
-            gap: 8px;
-            margin-bottom: 8px;
+            gap: 7px;
+            margin-bottom: 10px;
         }
-
         .code-digit {
-            width: 44px;
-            height: 52px;
-            background: #111120;
-            border: 1px solid rgba(0, 255, 136, 0.2);
-            border-radius: 10px;
+            width: 42px;
+            height: 50px;
+            background: var(--raised);
+            border: 1px solid rgba(212,168,67,.2);
+            border-radius: 9px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.5rem;
-            font-weight: 800;
-            color: #00ff88;
-            font-family: 'Inter', sans-serif;
+            font-family: 'Space Grotesk', monospace;
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--green);
         }
-
-        .code-hint {
-            font-size: 0.75rem;
-            color: #444;
-            margin-top: 8px;
+        .panel-note {
+            font-size: 0.72rem;
+            color: var(--muted);
+            text-align: center;
         }
-
-        .input-section {
-            margin-bottom: 20px;
+        .pulse {
+            display: inline-block;
+            width: 7px; height: 7px;
+            background: var(--green);
+            border-radius: 50%;
+            animation: pulse 1.4s infinite;
+            vertical-align: middle;
+            margin-right: 6px;
         }
+        @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:.3; } }
 
-        .form-label {
-            font-size: 0.78rem;
+        /* panel for totp/email */
+        .panel-body {
+            text-align: center;
+            padding: 6px 0;
+        }
+        .panel-app-name {
+            font-size: 0.95rem;
             font-weight: 600;
-            color: #aaa;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 8px;
-            display: block;
+            color: var(--text);
+            margin-bottom: 4px;
+        }
+        .panel-app-sub {
+            font-size: 0.75rem;
+            color: var(--sub);
         }
 
+        /* input */
+        .fg { margin-bottom: 16px; }
+        label {
+            display: block;
+            font-size: 0.68rem;
+            font-weight: 700;
+            color: var(--sub);
+            text-transform: uppercase;
+            letter-spacing: .7px;
+            margin-bottom: 7px;
+        }
         .code-input {
             width: 100%;
-            background: #111120;
-            border: 1px solid #1a1a2e;
-            color: #fff;
-            border-radius: 12px;
-            padding: 14px;
-            font-size: 1.8rem;
+            background: var(--raised);
+            border: 1.5px solid var(--border);
+            color: var(--text);
+            border-radius: 10px;
+            padding: 13px 20px;
+            font-size: 1.6rem;
+            font-family: 'Space Grotesk', monospace;
             font-weight: 800;
             text-align: center;
-            letter-spacing: 12px;
-            transition: all 0.2s;
-            font-family: 'Inter', sans-serif;
-        }
-
-        .code-input:focus {
+            letter-spacing: 10px;
+            transition: border-color .15s, box-shadow .15s;
             outline: none;
-            border-color: #00ff88;
-            box-shadow: 0 0 0 3px rgba(0, 255, 136, 0.08);
         }
-
-        .code-input::placeholder {
-            letter-spacing: 4px;
-            font-size: 1.2rem;
-            font-weight: 400;
-            color: #333;
-        }
-
-        .alert-err {
-            background: rgba(239, 68, 68, 0.08);
-            border: 1px solid rgba(239, 68, 68, 0.2);
-            color: #ef4444;
-            border-radius: 12px;
-            padding: 12px 16px;
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 0.875rem;
-        }
+        .code-input:focus { border-color: var(--green); box-shadow: 0 0 0 3px rgba(212,168,67,.07); }
+        .code-input::placeholder { letter-spacing: 4px; font-size: 1.2rem; color: var(--muted); }
 
         .btn-submit {
             width: 100%;
-            background: #00ff88;
+            background: var(--green);
             color: #000;
-            font-weight: 800;
+            font-weight: 700;
             border: none;
-            border-radius: 12px;
-            padding: 14px;
-            font-size: 1rem;
+            border-radius: 10px;
+            padding: 13px;
+            font-size: 0.9rem;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all .18s;
             font-family: 'Inter', sans-serif;
-        }
-
-        .btn-submit:hover {
-            background: #00cc6a;
-            transform: translateY(-1px);
-            box-shadow: 0 6px 20px rgba(0, 255, 136, 0.3);
-        }
-
-        .back-link {
-            text-align: center;
-            margin-top: 20px;
-        }
-
-        .back-link a {
-            color: #555;
-            text-decoration: none;
-            font-size: 0.875rem;
-            transition: color 0.2s;
-        }
-
-        .back-link a:hover {
-            color: #00ff88;
-        }
-
-        .timer-row {
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 8px;
-            margin-top: 12px;
         }
+        .btn-submit:hover { background: #c89a30; transform: translateY(-1px); box-shadow: 0 8px 24px rgba(212,168,67,.2); }
 
-        .timer-dot {
-            width: 8px;
-            height: 8px;
-            background: #00ff88;
-            border-radius: 50%;
-            animation: blink 1s infinite;
-        }
-
-        @keyframes blink {
-
-            0%,
-            100% {
-                opacity: 1;
-            }
-
-            50% {
-                opacity: 0.3;
-            }
-        }
-
-        .timer-text {
-            font-size: 0.78rem;
-            color: #555;
-        }
-
-        .info-row {
+        .note-row {
             display: flex;
-            align-items: center;
+            align-items: flex-start;
             gap: 10px;
-            background: #111120;
-            border: 1px solid #1a1a2e;
+            background: var(--raised);
+            border: 1px solid var(--border);
             border-radius: 10px;
-            padding: 12px 16px;
-            margin-top: 20px;
+            padding: 12px 14px;
+            margin-top: 18px;
+            font-size: 0.75rem;
+            color: var(--sub);
+            line-height: 1.5;
         }
+        .note-row i { color: #f59e0b; flex-shrink: 0; margin-top: 1px; }
 
-        .info-row i {
-            color: #f59e0b;
-            font-size: 1rem;
-            flex-shrink: 0;
+        .back-link {
+            text-align: center;
+            margin-top: 16px;
         }
-
-        .info-row span {
-            font-size: 0.78rem;
-            color: #555;
-            line-height: 1.4;
+        .back-link a {
+            font-size: 0.8rem;
+            color: var(--muted);
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            transition: color .15s;
         }
+        .back-link a:hover { color: var(--green); }
     </style>
 </head>
-
 <body>
-    <div class="auth-wrapper">
-        <div class="auth-card">
-            <div class="brand">Gamer<span>Zone</span></div>
-            <div class="shield-icon">🔐</div>
-            <h2 class="auth-title">Verificación en dos pasos</h2>
-            <p class="auth-sub">Hola <strong
-                    style="color:#fff"><?= htmlspecialchars($_SESSION['temp_user']['nombre']) ?></strong>, ingresa el
-                código de seguridad generado para tu cuenta.</p>
+<div class="wrap">
+    <div class="card">
+        <div class="brand">Gamer<span>Zone</span></div>
 
-            <?php if (isset($_SESSION['error'])): ?>
-                <div class="alert-err"><i
-                        class="bi bi-exclamation-circle-fill"></i><?= $_SESSION['error'];
-                        unset($_SESSION['error']); ?>
-                </div>
-            <?php endif; ?>
-
-            <?php if ($_SESSION['usar_totp'] ?? false): ?>
-                <!-- MODO GOOGLE AUTHENTICATOR -->
-                <div class="code-box" style="background:rgba(59,130,246,0.06);border-color:rgba(59,130,246,0.2);">
-                    <div class="code-label" style="color:#3b82f6;">Google Authenticator</div>
-                    <div style="font-size:3rem;margin:12px 0;">📱</div>
-                    <div style="font-size:0.875rem;color:#aaa;">Abre tu app y busca <strong style="color:#fff">GamerZone
-                            Bolivia</strong></div>
-                    <div class="code-hint">El código cambia cada 30 segundos</div>
-                </div>
-
-            <?php elseif (!($_SESSION['correo_enviado'] ?? false)): ?>
-                <!-- MODO DEMO: código visible en pantalla -->
-                <div class="code-box">
-                    <div class="code-label">Tu código de acceso</div>
-                    <div class="code-digits">
-                        <?php
-                        $codigo = $_SESSION['codigo_2fa'] ?? '000000';
-                        foreach (str_split($codigo) as $digit):
-                            ?>
-                            <div class="code-digit"><?= $digit ?></div>
-                        <?php endforeach; ?>
-                    </div>
-                    <div class="code-hint">Modo demo — en producción se envía al correo</div>
-                    <div class="timer-row">
-                        <div class="timer-dot"></div>
-                        <span class="timer-text">Código activo</span>
-                    </div>
-                </div>
-
-            <?php else: ?>
-                <!-- MODO CORREO ENVIADO -->
-                <div class="code-box" style="background:rgba(59,130,246,0.06);border-color:rgba(59,130,246,0.2);">
-                    <div class="code-label" style="color:#3b82f6;">Código enviado al correo</div>
-                    <div style="font-size:2rem;margin:12px 0;">📧</div>
-                    <div style="font-size:0.875rem;color:#aaa;"><?= $_SESSION['msg_2fa'] ?? '' ?></div>
-                    <div class="code-hint">Revisa tu bandeja de entrada y spam</div>
-                </div>
-            <?php endif; ?>
-
-            <form action="../../controllers/auth_controller.php" method="POST">
-                <input type="hidden" name="action" value="verify_2fa">
-                <div class="input-section">
-                    <label class="form-label">Ingresa el código de 6 dígitos</label>
-                    <input type="text" name="codigo" class="code-input" placeholder="••••••" maxlength="6" required
-                        autofocus autocomplete="one-time-code" pattern="[0-9]{6}" inputmode="numeric">
-                </div>
-                <button type="submit" class="btn-submit">
-                    <i class="bi bi-shield-check me-2"></i>Verificar y Entrar
-                </button>
-            </form>
-
-            <div class="info-row">
-                <i class="bi bi-info-circle"></i>
-                <span>
-                    <?php if ($_SESSION['usar_totp'] ?? false): ?>
-                        Usa el código de Google Authenticator que aparece en tu celular para esta cuenta.
-                    <?php else: ?>
-                        El código se muestra en pantalla como método de verificación. En producción se enviaría a tu correo.
-                    <?php endif; ?>
-                </span>
-            </div>
-
-            <div class="back-link">
-                <a href="login.php"><i class="bi bi-arrow-left me-1"></i>Volver al login</a>
+        <div class="shield-wrap">
+            <div class="shield <?= $usar_totp ? 'blue' : 'green' ?>">
+                <i class="bi bi-shield-lock-fill"></i>
             </div>
         </div>
+
+        <div class="v-title">Verificación en dos pasos</div>
+        <div class="v-sub">Hola <strong><?= htmlspecialchars($nombre) ?></strong>, confirma tu identidad para continuar.</div>
+
+        <?php if (isset($_SESSION['error'])): ?>
+            <div class="alert-err"><i class="bi bi-exclamation-circle-fill"></i><?= $_SESSION['error']; unset($_SESSION['error']); ?></div>
+        <?php endif; ?>
+
+        <?php if ($usar_totp): ?>
+            <div class="code-panel blue">
+                <div class="panel-label blue">Google Authenticator</div>
+                <div class="panel-body">
+                    <div class="panel-app-name">GamerZone Bolivia</div>
+                    <div class="panel-app-sub">Abre la app y copia el código que aparece para esta cuenta</div>
+                    <div class="panel-note" style="margin-top:12px;"><span class="pulse"></span>El código cambia cada 30 segundos</div>
+                </div>
+            </div>
+
+        <?php elseif (!$correo_enviado): ?>
+            <div class="code-panel green">
+                <div class="panel-label green">Código de acceso</div>
+                <div class="code-digits">
+                    <?php foreach (str_split($codigo_demo) as $d): ?>
+                        <div class="code-digit"><?= $d ?></div>
+                    <?php endforeach; ?>
+                </div>
+                <div class="panel-note"><span class="pulse"></span>Modo demo — en producción se envía al correo</div>
+            </div>
+
+        <?php else: ?>
+            <div class="code-panel blue">
+                <div class="panel-label blue">Código enviado al correo</div>
+                <div class="panel-body">
+                    <div class="panel-app-name"><?= $_SESSION['msg_2fa'] ?? '' ?></div>
+                    <div class="panel-app-sub">Revisa tu bandeja de entrada y spam</div>
+                </div>
+            </div>
+        <?php endif; ?>
+
+        <form action="../../controllers/auth_controller.php" method="POST">
+            <input type="hidden" name="action" value="verify_2fa">
+            <div class="fg">
+                <label>Ingresa el código de 6 dígitos</label>
+                <input type="text" name="codigo" class="code-input" placeholder="——————"
+                    maxlength="6" required autofocus autocomplete="one-time-code"
+                    pattern="[0-9]{6}" inputmode="numeric">
+            </div>
+            <button type="submit" class="btn-submit">
+                <i class="bi bi-shield-check"></i> Verificar y entrar
+            </button>
+        </form>
+
+        <div class="note-row">
+            <i class="bi bi-info-circle-fill"></i>
+            <span>
+                <?php if ($usar_totp): ?>
+                    Usa el código actual de Google Authenticator para la cuenta <strong>GamerZone Bolivia</strong>.
+                <?php else: ?>
+                    Ingresa el código de 6 dígitos mostrado arriba. En producción se enviaría a tu correo.
+                <?php endif; ?>
+            </span>
+        </div>
+
+        <div class="back-link">
+            <a href="login.php"><i class="bi bi-arrow-left"></i> Volver al login</a>
+        </div>
     </div>
-
-    <script>
-        document.querySelector('.code-input').addEventListener('input', function () {
-            this.value = this.value.replace(/\D/g, '').slice(0, 6);
-            if (this.value.length === 6) {
-                this.style.borderColor = '#00ff88';
-                this.style.boxShadow = '0 0 0 3px rgba(0,255,136,0.08)';
-            } else {
-                this.style.borderColor = '#1a1a2e';
-                this.style.boxShadow = 'none';
-            }
-        });
-    </script>
+</div>
+<script>
+    document.querySelector('.code-input').addEventListener('input', function () {
+        this.value = this.value.replace(/\D/g, '').slice(0, 6);
+        const full = this.value.length === 6;
+        this.style.borderColor = full ? 'var(--green)' : '';
+        this.style.boxShadow   = full ? '0 0 0 3px rgba(212,168,67,.07)' : '';
+    });
+</script>
 </body>
-
 </html>

@@ -1,6 +1,7 @@
 {
     "require": {
         "phpmailer/phpmailer": "^7.0",
-        "robthree/twofactorauth": "^3.0"
+        "robthree/twofactorauth": "^3.0",
+        "league/oauth2-github": "^3.1"
     }
 }

@@ -2,6 +2,7 @@
 session_start();
 require_once '../config/db.php';
 require_once '../config/mailer.php';
+require_once '../vendor/autoload.php';
 
 $action = $_POST['action'] ?? $_GET['action'] ?? '';
 
@@ -175,5 +176,102 @@ if ($action === 'logout') {
     session_destroy();
     header('Location: ../../index.php');
     exit;
+}
+
+// ═══════════════════════════════
+//  OAUTH — GITHUB
+// ═══════════════════════════════
+if ($action === 'oauth_github') {
+    require_once '../config/oauth.php';
+
+    if (GITHUB_CLIENT_ID === 'TU_GITHUB_CLIENT_ID') {
+        $_SESSION['error'] = 'OAuth GitHub no está configurado aún. Contacta al administrador.';
+        header('Location: ../views/auth/login.php');
+        exit;
+    }
+
+    $provider = new League\OAuth2\Client\Provider\Github([
+        'clientId'     => GITHUB_CLIENT_ID,
+        'clientSecret' => GITHUB_CLIENT_SECRET,
+        'redirectUri'  => GITHUB_REDIRECT_URI,
+    ]);
+
+    // Paso 1 — redirigir a GitHub
+    if (!isset($_GET['code'])) {
+        $authUrl = $provider->getAuthorizationUrl(['scope' => ['user:email']]);
+        $_SESSION['oauth2state'] = $provider->getState();
+        header('Location: ' . $authUrl);
+        exit;
+    }
+
+    // Paso 2 — verificar state (protección CSRF)
+    if (empty($_GET['state']) || $_GET['state'] !== ($_SESSION['oauth2state'] ?? '')) {
+        unset($_SESSION['oauth2state']);
+        $_SESSION['error'] = 'Estado OAuth inválido. Intenta de nuevo.';
+        header('Location: ../views/auth/login.php');
+        exit;
+    }
+    unset($_SESSION['oauth2state']);
+
+    // Paso 3 — intercambiar code por token y obtener perfil
+    try {
+        $token      = $provider->getAccessToken('authorization_code', ['code' => $_GET['code']]);
+        $githubUser = $provider->getResourceOwner($token);
+
+        $nombre    = $githubUser->getName() ?: $githubUser->getNickname();
+        $correo    = $githubUser->getEmail();
+
+        // Si el correo no es público, pedirlo a la API de emails
+        if (!$correo) {
+            $req      = $provider->getAuthenticatedRequest('GET', 'https://api.github.com/user/emails', $token);
+            $emails   = $provider->getParsedResponse($req);
+            foreach ($emails as $em) {
+                if ($em['primary'] && $em['verified']) {
+                    $correo = $em['email'];
+                    break;
+                }
+            }
+        }
+
+        if (!$correo) {
+            $_SESSION['error'] = 'GitHub no compartió tu correo. Hazlo público en tu perfil de GitHub o usa login tradicional.';
+            header('Location: ../views/auth/login.php');
+            exit;
+        }
+
+        // Paso 4 — buscar o crear usuario
+        $stmt = $conn->prepare("SELECT * FROM usuario WHERE correo=?");
+        $stmt->bind_param("s", $correo);
+        $stmt->execute();
+        $user = $stmt->get_result()->fetch_assoc();
+
+        if (!$user) {
+            $rol  = 'cliente';
+            $hash = password_hash(bin2hex(random_bytes(16)), PASSWORD_DEFAULT);
+            $ins  = $conn->prepare("INSERT INTO usuario (nombre, correo, contrasena, rol) VALUES (?,?,?,?)");
+            $ins->bind_param("ssss", $nombre, $correo, $hash, $rol);
+            $ins->execute();
+            $uid  = $conn->insert_id;
+            $user = ['id_usuario' => $uid, 'nombre' => $nombre, 'correo' => $correo, 'rol' => $rol, 'totp_secret' => null, 'totp_activo' => 0];
+            enviarBienvenida($correo, $nombre);
+        }
+
+        // Paso 5 — iniciar sesión (OAuth omite 2FA)
+        $_SESSION['usuario_id']     = $user['id_usuario'];
+        $_SESSION['usuario_nombre'] = $user['nombre'];
+        $_SESSION['usuario_rol']    = $user['rol'];
+
+        if ($user['rol'] === 'super_admin' || $user['rol'] === 'admin') {
+            header('Location: ../views/admin/dashboard.php');
+        } else {
+            header('Location: ../views/cliente/productos.php');
+        }
+        exit;
+
+    } catch (Exception $e) {
+        $_SESSION['error'] = 'Error al conectar con GitHub. Intenta de nuevo.';
+        header('Location: ../views/auth/login.php');
+        exit;
+    }
 }
 ?>
