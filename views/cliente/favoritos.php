@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 session_start();
 if (!isset($_SESSION['usuario_id'])) {
     header('Location: ../auth/login.php');
@@ -67,7 +67,7 @@ function imgSrc($img, $prefix = '../../assets/')
         }
 
         body {
-            background: #070711;
+            background: #080808;
             color: #fff;
             font-family: 'Inter', sans-serif;
             min-height: 100vh;
@@ -78,14 +78,14 @@ function imgSrc($img, $prefix = '../../assets/')
         }
 
         ::-webkit-scrollbar-thumb {
-            background: #1a1a2e;
+            background: #252525;
             border-radius: 2px;
         }
 
         .navbar {
             background: rgba(13, 13, 26, 0.95);
             backdrop-filter: blur(10px);
-            border-bottom: 1px solid #1a1a2e;
+            border-bottom: 1px solid #252525;
             padding: 14px 0;
             position: sticky;
             top: 0;
@@ -95,7 +95,7 @@ function imgSrc($img, $prefix = '../../assets/')
         .nav-brand {
             font-size: 1.5rem;
             font-weight: 800;
-            color: #00ff88;
+            color: #d4a843;
             text-decoration: none;
         }
 
@@ -112,7 +112,7 @@ function imgSrc($img, $prefix = '../../assets/')
             font-size: 0.875rem;
             padding: 8px 14px;
             border-radius: 8px;
-            border: 1px solid #1a1a2e;
+            border: 1px solid #252525;
             transition: all 0.2s;
         }
 
@@ -143,7 +143,7 @@ function imgSrc($img, $prefix = '../../assets/')
             position: absolute;
             top: -4px;
             right: -4px;
-            background: #00ff88;
+            background: #d4a843;
             color: #000;
             font-size: 0.6rem;
             font-weight: 800;
@@ -194,7 +194,7 @@ function imgSrc($img, $prefix = '../../assets/')
 
         .toast-msg {
             background: #0d1f0d;
-            border: 1px solid rgba(0, 255, 136, 0.3);
+            border: 1px solid rgba(212, 168, 67, 0.3);
             border-radius: 12px;
             padding: 14px 20px;
             display: flex;
@@ -219,8 +219,8 @@ function imgSrc($img, $prefix = '../../assets/')
         }
 
         .fav-card {
-            background: #0d0d1a;
-            border: 1px solid #1a1a2e;
+            background: #111111;
+            border: 1px solid #252525;
             border-radius: 18px;
             overflow: hidden;
             transition: all 0.3s;
@@ -238,7 +238,7 @@ function imgSrc($img, $prefix = '../../assets/')
         .fav-img {
             position: relative;
             height: 200px;
-            background: linear-gradient(135deg, #111120, #0a0a14);
+            background: linear-gradient(135deg, #181818, #0a0a14);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -323,7 +323,7 @@ function imgSrc($img, $prefix = '../../assets/')
         .fav-precio {
             font-size: 1.2rem;
             font-weight: 800;
-            color: #00ff88;
+            color: #d4a843;
         }
 
         .stock-badge {
@@ -334,9 +334,9 @@ function imgSrc($img, $prefix = '../../assets/')
         }
 
         .stock-ok {
-            background: rgba(0, 255, 136, 0.08);
-            color: #00ff88;
-            border: 1px solid rgba(0, 255, 136, 0.2);
+            background: rgba(212, 168, 67, 0.08);
+            color: #d4a843;
+            border: 1px solid rgba(212, 168, 67, 0.2);
         }
 
         .stock-low {
@@ -352,7 +352,7 @@ function imgSrc($img, $prefix = '../../assets/')
         }
 
         .btn-add {
-            background: #00ff88;
+            background: #d4a843;
             color: #000;
             font-weight: 700;
             border: none;
@@ -369,12 +369,12 @@ function imgSrc($img, $prefix = '../../assets/')
         }
 
         .btn-add:hover {
-            background: #00cc6a;
+            background: #c89a30;
             transform: translateY(-1px);
         }
 
         .btn-add:disabled {
-            background: #1a1a2e;
+            background: #252525;
             color: #444;
             cursor: not-allowed;
             transform: none;
@@ -393,7 +393,7 @@ function imgSrc($img, $prefix = '../../assets/')
         }
 
         .btn-shop {
-            background: #00ff88;
+            background: #d4a843;
             color: #000;
             font-weight: 700;
             border-radius: 12px;
@@ -406,7 +406,7 @@ function imgSrc($img, $prefix = '../../assets/')
         }
 
         .btn-shop:hover {
-            background: #00cc6a;
+            background: #c89a30;
             color: #000;
         }
     </style>
@@ -417,14 +417,25 @@ function imgSrc($img, $prefix = '../../assets/')
     <nav class="navbar">
         <div class="container">
             <div class="d-flex justify-content-between align-items-center">
-                <a href="#" class="nav-brand">Gamer<span>Zone</span></a>
+                <a href="productos.php" class="nav-brand">Gamer<span>Zone</span></a>
                 <div class="d-flex align-items-center gap-2">
-                    <a href="productos.php" class="btn-back"><i class="bi bi-arrow-left"></i> Productos</a>
+                    <a href="favoritos.php" class="nav-icon-btn" style="color:#d4a843;">
+                        <i class="bi bi-heart-fill"></i>
+                        <span class="d-none d-md-inline">Favoritos</span>
+                        <?php if ($cant_favs > 0): ?><span class="nav-badge fav"><?= $cant_favs ?></span><?php endif; ?>
+                    </a>
                     <a href="carrito.php" class="nav-icon-btn">
                         <i class="bi bi-cart3"></i>
-                        <?php if ($cant_carrito > 0): ?>
-                            <span class="nav-badge"><?= $cant_carrito ?></span>
-                        <?php endif; ?>
+                        <span class="d-none d-md-inline">Carrito</span>
+                        <?php if ($cant_carrito > 0): ?><span class="nav-badge"><?= $cant_carrito ?></span><?php endif; ?>
+                    </a>
+                    <a href="historial.php" class="nav-icon-btn">
+                        <i class="bi bi-bag-check"></i>
+                        <span class="d-none d-md-inline">Pedidos</span>
+                    </a>
+                    <a href="perfil.php" class="d-none d-lg-flex" style="display:flex;align-items:center;gap:8px;background:rgba(212,168,67,0.06);border:1px solid rgba(212,168,67,0.15);border-radius:20px;padding:6px 14px;font-size:0.82rem;text-decoration:none;color:#fff;">
+                        <div style="width:8px;height:8px;background:#d4a843;border-radius:50%;"></div>
+                        <span><?= htmlspecialchars($_SESSION['usuario_nombre']) ?></span>
                     </a>
                     <form action="../../controllers/auth_controller.php" method="POST">
                         <input type="hidden" name="action" value="logout">
@@ -440,7 +451,7 @@ function imgSrc($img, $prefix = '../../assets/')
             <div class="toast-msg" id="toastMsg"
                 style="<?= ($_SESSION['msg_tipo'] ?? 'ok') === 'err' ? 'background:#2a0d0d;border-color:rgba(239,68,68,0.3);' : '' ?>">
                 <i class="bi <?= ($_SESSION['msg_tipo'] ?? 'ok') === 'ok' ? 'bi-check-circle-fill' : 'bi-heart-break-fill' ?>"
-                    style="color:<?= ($_SESSION['msg_tipo'] ?? 'ok') === 'ok' ? '#00ff88' : '#ef4444' ?>"></i>
+                    style="color:<?= ($_SESSION['msg_tipo'] ?? 'ok') === 'ok' ? '#d4a843' : '#ef4444' ?>"></i>
                 <span><?= $_SESSION['msg_fav'] ?></span>
             </div>
         </div>
@@ -457,7 +468,7 @@ function imgSrc($img, $prefix = '../../assets/')
                 </div>
                 <?php if ($cant_favs > 0): ?>
                     <a href="productos.php"
-                        style="display:flex;align-items:center;gap:6px;color:#00ff88;text-decoration:none;font-size:0.875rem;border:1px solid rgba(0,255,136,0.2);padding:8px 16px;border-radius:8px;">
+                        style="display:flex;align-items:center;gap:6px;color:#d4a843;text-decoration:none;font-size:0.875rem;border:1px solid rgba(212,168,67,0.2);padding:8px 16px;border-radius:8px;">
                         <i class="bi bi-plus-lg"></i> Agregar más
                     </a>
                 <?php endif; ?>
@@ -465,7 +476,7 @@ function imgSrc($img, $prefix = '../../assets/')
 
             <?php if ($cant_favs === 0): ?>
                 <div class="empty-state">
-                    <div style="font-size:4rem;margin-bottom:20px;opacity:0.3;">💔</div>
+                    <i class="bi bi-heart" style="font-size:4rem;margin-bottom:20px;opacity:0.2;display:block;"></i>
                     <h3>No tienes favoritos aún</h3>
                     <p style="color:#444;font-size:0.875rem;margin-bottom:24px;">Guarda los productos que te gusten para
                         encontrarlos fácilmente</p>
@@ -481,7 +492,7 @@ function imgSrc($img, $prefix = '../../assets/')
                                 <div class="fav-img">
                                     <?php if ($img): ?>
                                         <img src="<?= $img ?>" alt="">
-                                    <?php else: ?>📦<?php endif; ?>
+                                    <?php else: ?><i class="bi bi-box" style="font-size:2rem;opacity:0.3;"></i><?php endif; ?>
                                     <form method="POST" style="position:absolute;top:12px;right:12px;">
                                         <input type="hidden" name="id_producto" value="<?= $p['id_producto'] ?>">
                                         <button type="submit" name="eliminar_favorito" class="fav-remove"

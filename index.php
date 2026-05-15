@@ -1,4 +1,8 @@
-<?php session_start(); ?>
+﻿<?php
+session_start();
+require_once 'config/db.php';
+$prod_destacados = $conn->query("SELECT p.*, c.nombre_categoria FROM producto p JOIN categoria c ON p.id_categoria=c.id_categoria WHERE p.estado=1 ORDER BY p.id_producto DESC LIMIT 4");
+?>
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -11,12 +15,12 @@
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
-            --green: #00ff88;
-            --green-dark: #00cc6a;
-            --bg: #070711;
-            --bg2: #0d0d1a;
-            --bg3: #111120;
-            --border: #1a1a2e;
+            --green: #d4a843;
+            --green-dark: #c89a30;
+            --bg: #080808;
+            --bg2: #111111;
+            --bg3: #181818;
+            --border: #252525;
             --text: #fff;
             --muted: #555;
         }
@@ -35,15 +39,15 @@
         .btn-nav-login{border:1.5px solid var(--green);color:var(--green);border-radius:10px;padding:8px 20px;font-size:0.875rem;font-weight:600;text-decoration:none;transition:all 0.2s;}
         .btn-nav-login:hover{background:var(--green);color:#000;}
         .btn-nav-register{background:var(--green);color:#000;border-radius:10px;padding:8px 20px;font-size:0.875rem;font-weight:700;text-decoration:none;transition:all 0.2s;border:1.5px solid var(--green);}
-        .btn-nav-register:hover{background:var(--green-dark);transform:translateY(-1px);box-shadow:0 4px 15px rgba(0,255,136,0.3);color:#000;}
+        .btn-nav-register:hover{background:var(--green-dark);transform:translateY(-1px);box-shadow:0 4px 15px rgba(212,168,67,0.3);color:#000;}
 
         /* ── HERO ── */
         .hero{min-height:100vh;display:flex;align-items:center;position:relative;overflow:hidden;padding:80px 0;}
-        .hero-bg{position:absolute;inset:0;background:radial-gradient(ellipse at 70% 50%,rgba(0,255,136,0.07) 0%,transparent 60%),radial-gradient(ellipse at 20% 80%,rgba(99,102,241,0.05) 0%,transparent 50%);pointer-events:none;}
+        .hero-bg{position:absolute;inset:0;background:radial-gradient(ellipse at 70% 50%,rgba(212,168,67,0.07) 0%,transparent 60%),radial-gradient(ellipse at 20% 80%,rgba(99,102,241,0.05) 0%,transparent 50%);pointer-events:none;}
         .hero-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,0.02) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.02) 1px,transparent 1px);background-size:60px 60px;pointer-events:none;mask-image:radial-gradient(ellipse at center,black 30%,transparent 80%);}
-        .hero-tag{display:inline-flex;align-items:center;gap:8px;background:rgba(0,255,136,0.08);border:1px solid rgba(0,255,136,0.2);border-radius:50px;padding:6px 16px;font-size:0.78rem;color:var(--green);margin-bottom:28px;animation:fadeInDown 0.6s ease;}
+        .hero-tag{display:inline-flex;align-items:center;gap:8px;background:rgba(212,168,67,0.08);border:1px solid rgba(212,168,67,0.2);border-radius:50px;padding:6px 16px;font-size:0.78rem;color:var(--green);margin-bottom:28px;animation:fadeInDown 0.6s ease;}
         .hero-tag .pulse{width:8px;height:8px;background:var(--green);border-radius:50%;animation:pulse 2s infinite;}
-        @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(0,255,136,0.4);}50%{box-shadow:0 0 0 6px transparent;}}
+        @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(212,168,67,0.4);}50%{box-shadow:0 0 0 6px transparent;}}
         .hero h1{font-family:'Rajdhani',sans-serif;font-size:clamp(2.8rem,7vw,5.5rem);font-weight:700;line-height:1.05;margin-bottom:24px;animation:fadeInUp 0.7s ease 0.1s both;}
         .hero h1 .line1{display:block;}
         .hero h1 .highlight{color:var(--green);position:relative;}
@@ -51,20 +55,20 @@
         .hero-desc{font-size:1.05rem;color:#777;line-height:1.8;max-width:520px;margin-bottom:40px;animation:fadeInUp 0.7s ease 0.2s both;}
         .hero-btns{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:56px;animation:fadeInUp 0.7s ease 0.3s both;}
         .btn-hero-primary{background:var(--green);color:#000;font-weight:800;border:none;border-radius:12px;padding:14px 32px;font-size:1rem;text-decoration:none;display:inline-flex;align-items:center;gap:8px;transition:all 0.3s;}
-        .btn-hero-primary:hover{background:var(--green-dark);transform:translateY(-2px);box-shadow:0 8px 30px rgba(0,255,136,0.3);color:#000;}
+        .btn-hero-primary:hover{background:var(--green-dark);transform:translateY(-2px);box-shadow:0 8px 30px rgba(212,168,67,0.3);color:#000;}
         .btn-hero-secondary{background:transparent;color:#fff;border:1.5px solid #2a2a3e;border-radius:12px;padding:14px 32px;font-size:1rem;text-decoration:none;display:inline-flex;align-items:center;gap:8px;transition:all 0.3s;}
         .btn-hero-secondary:hover{border-color:var(--green);color:var(--green);transform:translateY(-2px);}
         .hero-stats{display:flex;gap:0;animation:fadeInUp 0.7s ease 0.4s both;}
-        .stat-item{padding:0 32px 0 0;border-right:1px solid #1a1a2e;margin-right:32px;}
+        .stat-item{padding:0 32px 0 0;border-right:1px solid #252525;margin-right:32px;}
         .stat-item:last-child{border-right:none;margin-right:0;}
         .stat-num{font-family:'Rajdhani',sans-serif;font-size:2.2rem;font-weight:700;color:var(--green);line-height:1;}
         .stat-label{font-size:0.75rem;color:var(--muted);margin-top:4px;}
 
         /* HERO VISUAL */
         .hero-visual{position:relative;display:flex;align-items:center;justify-content:center;animation:fadeInRight 0.8s ease 0.3s both;}
-        .hero-circle{width:480px;height:480px;border-radius:50%;border:1px solid rgba(0,255,136,0.08);display:flex;align-items:center;justify-content:center;position:relative;animation:rotate 20s linear infinite;}
-        .hero-circle::before{content:'';position:absolute;inset:-20px;border-radius:50%;border:1px solid rgba(0,255,136,0.04);}
-        .hero-circle-inner{width:360px;height:360px;border-radius:50%;background:radial-gradient(circle,rgba(0,255,136,0.1) 0%,rgba(0,255,136,0.02) 50%,transparent 70%);display:flex;align-items:center;justify-content:center;font-size:10rem;filter:drop-shadow(0 0 40px rgba(0,255,136,0.4));animation:float 4s ease-in-out infinite,counterRotate 20s linear infinite;}
+        .hero-circle{width:480px;height:480px;border-radius:50%;border:1px solid rgba(212,168,67,0.08);display:flex;align-items:center;justify-content:center;position:relative;animation:rotate 20s linear infinite;}
+        .hero-circle::before{content:'';position:absolute;inset:-20px;border-radius:50%;border:1px solid rgba(212,168,67,0.04);}
+        .hero-circle-inner{width:360px;height:360px;border-radius:50%;background:radial-gradient(circle,rgba(212,168,67,0.1) 0%,rgba(212,168,67,0.02) 50%,transparent 70%);display:flex;align-items:center;justify-content:center;font-size:10rem;filter:drop-shadow(0 0 40px rgba(212,168,67,0.4));animation:float 4s ease-in-out infinite,counterRotate 20s linear infinite;}
         .orbit-item{position:absolute;width:48px;height:48px;border-radius:12px;background:var(--bg2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:1.4rem;animation:counterRotate 20s linear infinite;}
         @keyframes rotate{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
         @keyframes counterRotate{from{transform:rotate(0deg);}to{transform:rotate(-360deg);}}
@@ -75,7 +79,7 @@
 
         /* ── SECCIÓN GENÉRICA ── */
         section{padding:100px 0;}
-        .sec-tag{display:inline-block;background:rgba(0,255,136,0.06);border:1px solid rgba(0,255,136,0.15);border-radius:50px;padding:4px 16px;font-size:0.72rem;color:var(--green);text-transform:uppercase;letter-spacing:2px;margin-bottom:16px;}
+        .sec-tag{display:inline-block;background:rgba(212,168,67,0.06);border:1px solid rgba(212,168,67,0.15);border-radius:50px;padding:4px 16px;font-size:0.72rem;color:var(--green);text-transform:uppercase;letter-spacing:2px;margin-bottom:16px;}
         .sec-title{font-family:'Rajdhani',sans-serif;font-size:clamp(1.8rem,4vw,2.8rem);font-weight:700;margin-bottom:12px;}
         .sec-title span{color:var(--green);}
         .sec-sub{color:var(--muted);font-size:0.95rem;line-height:1.7;max-width:480px;}
@@ -99,7 +103,7 @@
 
         /* ── PRODUCTOS ── */
         .prod-card{background:var(--bg2);border:1px solid var(--border);border-radius:20px;overflow:hidden;transition:all 0.35s;height:100%;}
-        .prod-card:hover{border-color:rgba(0,255,136,0.3);transform:translateY(-6px);box-shadow:0 16px 50px rgba(0,0,0,0.5);}
+        .prod-card:hover{border-color:rgba(212,168,67,0.3);transform:translateY(-6px);box-shadow:0 16px 50px rgba(0,0,0,0.5);}
         .prod-img{height:220px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:5rem;position:relative;overflow:hidden;}
         .prod-img img{width:100%;height:100%;object-fit:cover;transition:transform 0.4s;}
         .prod-card:hover .prod-img img{transform:scale(1.06);}
@@ -115,19 +119,19 @@
         .prod-precio{font-family:'Rajdhani',sans-serif;font-size:1.4rem;font-weight:700;color:var(--green);}
         .prod-stock{font-size:0.7rem;color:var(--muted);}
         .btn-prod{background:var(--green);color:#000;font-weight:700;border:none;border-radius:10px;padding:10px;width:100%;font-size:0.875rem;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:6px;text-decoration:none;}
-        .btn-prod:hover{background:var(--green-dark);transform:translateY(-1px);box-shadow:0 4px 15px rgba(0,255,136,0.25);color:#000;}
+        .btn-prod:hover{background:var(--green-dark);transform:translateY(-1px);box-shadow:0 4px 15px rgba(212,168,67,0.25);color:#000;}
 
         /* ── BENEFICIOS ── */
         .ben-card{background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:32px;transition:all 0.3s;position:relative;overflow:hidden;}
         .ben-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--green),transparent);transform:scaleX(0);transition:transform 0.3s;transform-origin:left;}
         .ben-card:hover::before{transform:scaleX(1);}
-        .ben-card:hover{border-color:rgba(0,255,136,0.2);transform:translateY(-4px);}
-        .ben-icon{width:56px;height:56px;background:rgba(0,255,136,0.08);border:1px solid rgba(0,255,136,0.15);border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:1.5rem;margin-bottom:20px;}
+        .ben-card:hover{border-color:rgba(212,168,67,0.2);transform:translateY(-4px);}
+        .ben-icon{width:56px;height:56px;background:rgba(212,168,67,0.08);border:1px solid rgba(212,168,67,0.15);border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:1.5rem;margin-bottom:20px;}
         .ben-title{font-weight:700;font-size:1.1rem;margin-bottom:10px;}
         .ben-desc{color:var(--muted);font-size:0.875rem;line-height:1.7;}
 
         /* ── COUNTER SECTION ── */
-        .counter-section{background:linear-gradient(135deg,rgba(0,255,136,0.05) 0%,transparent 50%),var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:60px 0;}
+        .counter-section{background:linear-gradient(135deg,rgba(212,168,67,0.05) 0%,transparent 50%),var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:60px 0;}
         .counter-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:0;}
         .counter-item{text-align:center;padding:20px;border-right:1px solid var(--border);}
         .counter-item:last-child{border-right:none;}
@@ -135,7 +139,7 @@
         .counter-label{font-size:0.82rem;color:var(--muted);margin-top:6px;}
 
         /* ── NEWSLETTER ── */
-        .newsletter-section{background:linear-gradient(135deg,rgba(0,255,136,0.06),rgba(99,102,241,0.04));border:1px solid rgba(0,255,136,0.12);border-radius:28px;padding:60px 48px;text-align:center;margin:0 auto;max-width:700px;}
+        .newsletter-section{background:linear-gradient(135deg,rgba(212,168,67,0.06),rgba(99,102,241,0.04));border:1px solid rgba(212,168,67,0.12);border-radius:28px;padding:60px 48px;text-align:center;margin:0 auto;max-width:700px;}
         .newsletter-section h2{font-family:'Rajdhani',sans-serif;font-size:2.2rem;font-weight:700;margin-bottom:12px;}
         .newsletter-input-wrap{display:flex;gap:12px;max-width:480px;margin:24px auto 0;}
         .newsletter-input{flex:1;background:rgba(255,255,255,0.04);border:1px solid var(--border);color:#fff;border-radius:12px;padding:14px 20px;font-size:0.95rem;}
@@ -150,7 +154,7 @@
         .footer-brand span{color:#fff;}
         .footer-desc{color:var(--muted);font-size:0.875rem;line-height:1.7;margin-top:12px;max-width:280px;}
         .social-btn{width:38px;height:38px;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:10px;display:inline-flex;align-items:center;justify-content:center;color:var(--muted);transition:all 0.2s;text-decoration:none;}
-        .social-btn:hover{border-color:var(--green);color:var(--green);background:rgba(0,255,136,0.06);}
+        .social-btn:hover{border-color:var(--green);color:var(--green);background:rgba(212,168,67,0.06);}
         .footer-title{font-weight:700;font-size:0.875rem;color:#fff;margin-bottom:18px;}
         .footer-link{display:block;color:var(--muted);font-size:0.875rem;text-decoration:none;margin-bottom:10px;transition:color 0.2s;}
         .footer-link:hover{color:var(--green);}
@@ -243,11 +247,11 @@
             <div class="col-lg-6 d-none d-lg-block">
                 <div class="hero-visual">
                     <div class="hero-circle">
-                        <div class="hero-circle-inner">🎮</div>
-                        <div class="orbit-item" style="top:10%;left:50%;transform:translateX(-50%);">💻</div>
-                        <div class="orbit-item" style="top:50%;right:-24px;transform:translateY(-50%);">🖥️</div>
-                        <div class="orbit-item" style="bottom:10%;left:50%;transform:translateX(-50%);">🎧</div>
-                        <div class="orbit-item" style="top:50%;left:-24px;transform:translateY(-50%);">🖱️</div>
+                        <div class="hero-circle-inner"><i class="bi bi-controller" style="font-size:10rem;color:#d4a843;filter:drop-shadow(0 0 40px rgba(212,168,67,0.4));"></i></div>
+                        <div class="orbit-item" style="top:10%;left:50%;transform:translateX(-50%);"><i class="bi bi-laptop" style="color:#d4a843;"></i></div>
+                        <div class="orbit-item" style="top:50%;right:-24px;transform:translateY(-50%);"><i class="bi bi-display" style="color:#d4a843;"></i></div>
+                        <div class="orbit-item" style="bottom:10%;left:50%;transform:translateX(-50%);"><i class="bi bi-headset" style="color:#d4a843;"></i></div>
+                        <div class="orbit-item" style="top:50%;left:-24px;transform:translateY(-50%);"><i class="bi bi-mouse" style="color:#d4a843;"></i></div>
                     </div>
                 </div>
             </div>
@@ -291,12 +295,12 @@
             <!-- Laptops -->
             <div class="cat-card" onclick="window.location='views/auth/login.php'" style="grid-row:span 2;">
                 <div class="cat-bg" style="background:linear-gradient(135deg,#0a0f1e,#1a1040,#0d1f0d);"></div>
-                <div class="cat-overlay" style="background:linear-gradient(135deg,rgba(0,255,136,0.3),rgba(99,102,241,0.4));opacity:0.7;"></div>
+                <div class="cat-overlay" style="background:linear-gradient(135deg,rgba(212,168,67,0.3),rgba(99,102,241,0.4));opacity:0.7;"></div>
                 <div style="position:absolute;inset:0;display:flex;flex-direction:column;justify-content:flex-end;padding:28px;z-index:2;">
-                    <div style="font-size:4rem;margin-bottom:12px;filter:drop-shadow(0 4px 12px rgba(0,0,0,0.5));">💻</div>
+                    <div style="font-size:4rem;margin-bottom:12px;filter:drop-shadow(0 4px 12px rgba(0,0,0,0.5));"><i class="bi bi-laptop" style="color:#d4a843;"></i></div>
                     <div style="font-family:'Rajdhani',sans-serif;font-size:1.8rem;font-weight:700;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,0.5);">Laptops Gamer</div>
                     <div style="font-size:0.82rem;color:rgba(255,255,255,0.6);margin-top:4px;">RTX 4090 · i9 · 32GB RAM</div>
-                    <div style="display:inline-flex;align-items:center;gap:6px;margin-top:14px;background:rgba(0,255,136,0.15);border:1px solid rgba(0,255,136,0.3);border-radius:8px;padding:6px 14px;width:fit-content;font-size:0.78rem;color:var(--green);">Ver laptops <i class="bi bi-arrow-right"></i></div>
+                    <div style="display:inline-flex;align-items:center;gap:6px;margin-top:14px;background:rgba(212,168,67,0.15);border:1px solid rgba(212,168,67,0.3);border-radius:8px;padding:6px 14px;width:fit-content;font-size:0.78rem;color:var(--green);">Ver laptops <i class="bi bi-arrow-right"></i></div>
                 </div>
             </div>
             <!-- Monitores -->
@@ -304,7 +308,7 @@
                 <div class="cat-bg" style="background:linear-gradient(135deg,#0d1520,#1a2a3a,#0a1520);"></div>
                 <div class="cat-overlay" style="background:linear-gradient(135deg,rgba(59,130,246,0.4),rgba(99,102,241,0.3));opacity:0.7;"></div>
                 <div style="position:absolute;inset:0;display:flex;align-items:flex-end;padding:20px;z-index:2;gap:12px;">
-                    <div style="font-size:2.5rem;filter:drop-shadow(0 2px 8px rgba(0,0,0,0.5));">🖥️</div>
+                    <div style="font-size:2.5rem;filter:drop-shadow(0 2px 8px rgba(0,0,0,0.5));"><i class="bi bi-display" style="color:#d4a843;"></i></div>
                     <div>
                         <div style="font-family:'Rajdhani',sans-serif;font-size:1.3rem;font-weight:700;color:#fff;">Monitores</div>
                         <div style="font-size:0.72rem;color:rgba(255,255,255,0.5);">144Hz · 4K · IPS</div>
@@ -314,10 +318,10 @@
             </div>
             <!-- Mouse -->
             <div class="cat-card" onclick="window.location='views/auth/login.php'">
-                <div class="cat-bg" style="background:linear-gradient(135deg,#1a0d0d,#2a1020,#0d0d1a);"></div>
+                <div class="cat-bg" style="background:linear-gradient(135deg,#1a0d0d,#2a1020,#111111);"></div>
                 <div class="cat-overlay" style="background:linear-gradient(135deg,rgba(239,68,68,0.3),rgba(168,85,247,0.3));opacity:0.7;"></div>
                 <div style="position:absolute;inset:0;display:flex;align-items:flex-end;padding:20px;z-index:2;gap:12px;">
-                    <div style="font-size:2.5rem;filter:drop-shadow(0 2px 8px rgba(0,0,0,0.5));">🖱️</div>
+                    <div style="font-size:2.5rem;filter:drop-shadow(0 2px 8px rgba(0,0,0,0.5));"><i class="bi bi-mouse" style="color:#d4a843;"></i></div>
                     <div>
                         <div style="font-family:'Rajdhani',sans-serif;font-size:1.3rem;font-weight:700;color:#fff;">Mouse Gaming</div>
                         <div style="font-size:0.72rem;color:rgba(255,255,255,0.5);">25K DPI · RGB · Wireless</div>
@@ -328,9 +332,9 @@
             <!-- Teclados -->
             <div class="cat-card" onclick="window.location='views/auth/login.php'">
                 <div class="cat-bg" style="background:linear-gradient(135deg,#0d1a0d,#1a2a10,#0a1a1a);"></div>
-                <div class="cat-overlay" style="background:linear-gradient(135deg,rgba(0,255,136,0.3),rgba(245,158,11,0.2));opacity:0.7;"></div>
+                <div class="cat-overlay" style="background:linear-gradient(135deg,rgba(212,168,67,0.3),rgba(245,158,11,0.2));opacity:0.7;"></div>
                 <div style="position:absolute;inset:0;display:flex;align-items:flex-end;padding:20px;z-index:2;gap:12px;">
-                    <div style="font-size:2.5rem;filter:drop-shadow(0 2px 8px rgba(0,0,0,0.5));">⌨️</div>
+                    <div style="font-size:2.5rem;filter:drop-shadow(0 2px 8px rgba(0,0,0,0.5));"><i class="bi bi-keyboard" style="color:#d4a843;"></i></div>
                     <div>
                         <div style="font-family:'Rajdhani',sans-serif;font-size:1.3rem;font-weight:700;color:#fff;">Teclados</div>
                         <div style="font-size:0.72rem;color:rgba(255,255,255,0.5);">Mecánicos · RGB · TKL</div>
@@ -343,7 +347,7 @@
                 <div class="cat-bg" style="background:linear-gradient(135deg,#10101a,#1a1040,#0d0d20);"></div>
                 <div class="cat-overlay" style="background:linear-gradient(135deg,rgba(168,85,247,0.4),rgba(59,130,246,0.3));opacity:0.7;"></div>
                 <div style="position:absolute;inset:0;display:flex;align-items:flex-end;padding:20px;z-index:2;gap:12px;">
-                    <div style="font-size:2.5rem;filter:drop-shadow(0 2px 8px rgba(0,0,0,0.5));">🎮</div>
+                    <div style="font-size:2.5rem;filter:drop-shadow(0 2px 8px rgba(0,0,0,0.5));"><i class="bi bi-controller" style="color:#d4a843;"></i></div>
                     <div>
                         <div style="font-family:'Rajdhani',sans-serif;font-size:1.3rem;font-weight:700;color:#fff;">Consolas</div>
                         <div style="font-size:0.72rem;color:rgba(255,255,255,0.5);">PS5 · Xbox · Switch</div>
@@ -356,7 +360,7 @@
                 <div class="cat-bg" style="background:linear-gradient(135deg,#1a1200,#2a2010,#0a0a0a);"></div>
                 <div class="cat-overlay" style="background:linear-gradient(135deg,rgba(245,158,11,0.3),rgba(239,68,68,0.2));opacity:0.7;"></div>
                 <div style="position:absolute;inset:0;display:flex;align-items:flex-end;padding:20px;z-index:2;gap:12px;">
-                    <div style="font-size:2.5rem;filter:drop-shadow(0 2px 8px rgba(0,0,0,0.5));">🎧</div>
+                    <div style="font-size:2.5rem;filter:drop-shadow(0 2px 8px rgba(0,0,0,0.5));"><i class="bi bi-headset" style="color:#d4a843;"></i></div>
                     <div>
                         <div style="font-family:'Rajdhani',sans-serif;font-size:1.3rem;font-weight:700;color:#fff;">Accesorios</div>
                         <div style="font-size:0.72rem;color:rgba(255,255,255,0.5);">Headsets · Sillas · Pads</div>
@@ -376,83 +380,55 @@
                 <span class="sec-tag">Destacados</span>
                 <h2 class="sec-title mb-0">Productos <span>Populares</span></h2>
             </div>
-            <a href="views/auth/login.php" style="display:flex;align-items:center;gap:6px;color:var(--green);text-decoration:none;font-size:0.875rem;border:1px solid rgba(0,255,136,0.2);padding:10px 20px;border-radius:10px;transition:all 0.2s;" onmouseover="this.style.background='rgba(0,255,136,0.06)'" onmouseout="this.style.background='transparent'">
+            <a href="views/auth/login.php" style="display:flex;align-items:center;gap:6px;color:var(--green);text-decoration:none;font-size:0.875rem;border:1px solid rgba(212,168,67,0.2);padding:10px 20px;border-radius:10px;transition:all 0.2s;" onmouseover="this.style.background='rgba(212,168,67,0.06)'" onmouseout="this.style.background='transparent'">
                 Ver todos <i class="bi bi-arrow-right"></i>
             </a>
         </div>
         <div class="row g-4 reveal">
+            <?php
+            $cat_icons = ['Laptops'=>'bi-laptop','Monitores'=>'bi-display','Mouse'=>'bi-mouse','Teclados'=>'bi-keyboard','Consolas'=>'bi-controller','Auriculares'=>'bi-headset','Accesorios'=>'bi-headset'];
+            $badges = ['badge-n','badge-o','badge-p','badge-n'];
+            $badge_labels = ['Nuevo','Oferta','Popular','Nuevo'];
+            $i = 0;
+            if ($prod_destacados->num_rows === 0):
+            ?>
+            <div class="col-12 text-center py-5" style="color:#555;">
+                <i class="bi bi-box-seam" style="font-size:3rem;"></i>
+                <p class="mt-3">Aún no hay productos en el catálogo. <a href="views/auth/login.php" style="color:#d4a843;">Inicia sesión</a> para explorar.</p>
+            </div>
+            <?php else: while ($p = $prod_destacados->fetch_assoc()):
+                $cat = $p['nombre_categoria'] ?? '';
+                $ico = 'bi-controller';
+                foreach ($cat_icons as $k => $v) { if (stripos($cat, $k) !== false) { $ico = $v; break; } }
+                $img_src = !empty($p['imagen']) ? ((strpos($p['imagen'],'http')===0) ? $p['imagen'] : 'assets/'.$p['imagen']) : null;
+            ?>
             <div class="col-md-6 col-lg-3">
                 <div class="prod-card">
-                    <div class="prod-img" style="background:linear-gradient(135deg,#0d1f2d,#1a3040);">
-                        <span class="prod-badge badge-n">Nuevo</span>
-                        💻
+                    <div class="prod-img" style="background:linear-gradient(135deg,#0d1520,#1a2030);">
+                        <span class="prod-badge <?= $badges[$i % 4] ?>"><?= $badge_labels[$i % 4] ?></span>
+                        <?php if ($img_src): ?>
+                            <img src="<?= htmlspecialchars($img_src) ?>" alt="<?= htmlspecialchars($p['nombre']) ?>" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;">
+                        <?php else: ?>
+                            <i class="bi <?= $ico ?>" style="font-size:5rem;color:#d4a843;opacity:0.7;"></i>
+                        <?php endif; ?>
                     </div>
                     <div class="prod-body">
-                        <div class="prod-marca">ASUS ROG</div>
-                        <div class="prod-nombre">ROG Strix G15 Gaming</div>
-                        <div class="prod-desc">RTX 3070, Intel i7, 16GB RAM, 165Hz FHD</div>
+                        <div class="prod-marca"><?= htmlspecialchars($p['marca']) ?></div>
+                        <div class="prod-nombre"><?= htmlspecialchars($p['nombre']) ?></div>
+                        <div class="prod-desc"><?= htmlspecialchars(mb_strimwidth($p['descripcion'] ?? '', 0, 60, '…')) ?></div>
                         <div class="prod-footer">
-                            <span class="prod-precio">Bs. 8,500</span>
-                            <span class="prod-stock"><i class="bi bi-check-circle text-success me-1"></i>En stock</span>
+                            <span class="prod-precio">Bs. <?= number_format($p['precio'], 2) ?></span>
+                            <?php if ($p['stock'] > 0): ?>
+                                <span class="prod-stock"><i class="bi bi-check-circle text-success me-1"></i>En stock</span>
+                            <?php else: ?>
+                                <span class="prod-stock" style="color:#ef4444;"><i class="bi bi-x-circle me-1"></i>Agotado</span>
+                            <?php endif; ?>
                         </div>
                         <a href="views/auth/login.php" class="btn-prod"><i class="bi bi-cart-plus"></i>Agregar</a>
                     </div>
                 </div>
             </div>
-            <div class="col-md-6 col-lg-3">
-                <div class="prod-card">
-                    <div class="prod-img" style="background:linear-gradient(135deg,#0d1a2d,#1a2540);">
-                        <span class="prod-badge badge-o">Oferta</span>
-                        🖥️
-                    </div>
-                    <div class="prod-body">
-                        <div class="prod-marca">Samsung</div>
-                        <div class="prod-nombre">Odyssey G7 240Hz</div>
-                        <div class="prod-desc">Curvo QHLED 27", 240Hz, 1ms, G-Sync</div>
-                        <div class="prod-footer">
-                            <span class="prod-precio">Bs. 3,200</span>
-                            <span class="prod-stock"><i class="bi bi-check-circle text-success me-1"></i>En stock</span>
-                        </div>
-                        <a href="views/auth/login.php" class="btn-prod"><i class="bi bi-cart-plus"></i>Agregar</a>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-6 col-lg-3">
-                <div class="prod-card">
-                    <div class="prod-img" style="background:linear-gradient(135deg,#1a0d1a,#2a1030);">
-                        <span class="prod-badge badge-p">Popular</span>
-                        🖱️
-                    </div>
-                    <div class="prod-body">
-                        <div class="prod-marca">Logitech</div>
-                        <div class="prod-nombre">G Pro X Superlight 2</div>
-                        <div class="prod-desc">61g, Sensor HERO 25K, 70h batería</div>
-                        <div class="prod-footer">
-                            <span class="prod-precio">Bs. 650</span>
-                            <span class="prod-stock"><i class="bi bi-check-circle text-success me-1"></i>En stock</span>
-                        </div>
-                        <a href="views/auth/login.php" class="btn-prod"><i class="bi bi-cart-plus"></i>Agregar</a>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-6 col-lg-3">
-                <div class="prod-card">
-                    <div class="prod-img" style="background:linear-gradient(135deg,#0d0d20,#1a1040);">
-                        <span class="prod-badge badge-n">Nuevo</span>
-                        🎮
-                    </div>
-                    <div class="prod-body">
-                        <div class="prod-marca">Sony</div>
-                        <div class="prod-nombre">PlayStation 5 Slim</div>
-                        <div class="prod-desc">4K gaming, SSD ultrarrápido, DualSense</div>
-                        <div class="prod-footer">
-                            <span class="prod-precio">Bs. 4,200</span>
-                            <span class="prod-stock"><i class="bi bi-check-circle text-success me-1"></i>En stock</span>
-                        </div>
-                        <a href="views/auth/login.php" class="btn-prod"><i class="bi bi-cart-plus"></i>Agregar</a>
-                    </div>
-                </div>
-            </div>
+            <?php $i++; endwhile; endif; ?>
         </div>
     </div>
 </section>
@@ -606,7 +582,7 @@ document.querySelectorAll('.counter-section').forEach(el => counterObserver.obse
 window.addEventListener('scroll', () => {
     const navbar = document.querySelector('.navbar');
     if(window.scrollY > 50) {
-        navbar.style.borderBottomColor = 'rgba(0,255,136,0.15)';
+        navbar.style.borderBottomColor = 'rgba(212,168,67,0.15)';
     } else {
         navbar.style.borderBottomColor = 'var(--border)';
     }

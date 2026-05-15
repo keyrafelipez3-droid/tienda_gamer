@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 session_start();
 if (!isset($_SESSION['usuario_id'])) {
     header('Location: ../auth/login.php');
@@ -50,6 +50,7 @@ if (isset($_POST['toggle_favorito'])) {
 
 $buscar = trim($_GET['buscar'] ?? '');
 $id_cat = intval($_GET['categoria'] ?? 0);
+$marca_fil = trim($_GET['marca'] ?? '');
 $orden = $_GET['orden'] ?? 'reciente';
 
 $where = "WHERE p.estado = 1";
@@ -68,6 +69,11 @@ if ($id_cat) {
     $params[] = $id_cat;
     $types .= 'i';
 }
+if ($marca_fil) {
+    $where .= " AND p.marca = ?";
+    $params[] = $marca_fil;
+    $types .= 's';
+}
 
 $order_sql = match ($orden) {
     'precio_asc' => 'p.precio ASC',
@@ -84,6 +90,7 @@ $stmt->execute();
 $productos = $stmt->get_result();
 
 $categorias = $conn->query("SELECT * FROM categoria ORDER BY nombre_categoria");
+$marcas = $conn->query("SELECT DISTINCT marca FROM producto WHERE estado=1 AND marca != '' ORDER BY marca");
 
 $favs = [];
 $fav_res = $conn->prepare("SELECT id_producto FROM favorito WHERE id_usuario=?");
@@ -123,7 +130,7 @@ function imgSrc($img, $prefix = '../../assets/')
         }
 
         body {
-            background: #070711;
+            background: #080808;
             color: #fff;
             font-family: 'Inter', sans-serif;
         }
@@ -133,14 +140,14 @@ function imgSrc($img, $prefix = '../../assets/')
         }
 
         ::-webkit-scrollbar-thumb {
-            background: #1a1a2e;
+            background: #252525;
             border-radius: 3px;
         }
 
         .navbar {
             background: rgba(13, 13, 26, 0.95);
             backdrop-filter: blur(10px);
-            border-bottom: 1px solid #1a1a2e;
+            border-bottom: 1px solid #252525;
             padding: 14px 0;
             position: sticky;
             top: 0;
@@ -150,7 +157,7 @@ function imgSrc($img, $prefix = '../../assets/')
         .nav-brand {
             font-size: 1.5rem;
             font-weight: 800;
-            color: #00ff88;
+            color: #d4a843;
             text-decoration: none;
             letter-spacing: 1px;
         }
@@ -186,7 +193,7 @@ function imgSrc($img, $prefix = '../../assets/')
             position: absolute;
             top: -4px;
             right: -4px;
-            background: #00ff88;
+            background: #d4a843;
             color: #000;
             font-size: 0.6rem;
             font-weight: 800;
@@ -206,8 +213,8 @@ function imgSrc($img, $prefix = '../../assets/')
             display: flex;
             align-items: center;
             gap: 8px;
-            background: rgba(0, 255, 136, 0.06);
-            border: 1px solid rgba(0, 255, 136, 0.15);
+            background: rgba(212, 168, 67, 0.06);
+            border: 1px solid rgba(212, 168, 67, 0.15);
             border-radius: 20px;
             padding: 6px 14px;
             font-size: 0.82rem;
@@ -217,14 +224,14 @@ function imgSrc($img, $prefix = '../../assets/')
         }
 
         .user-chip:hover {
-            background: rgba(0, 255, 136, 0.1);
-            color: #00ff88;
+            background: rgba(212, 168, 67, 0.1);
+            color: #d4a843;
         }
 
         .user-chip .dot {
             width: 8px;
             height: 8px;
-            background: #00ff88;
+            background: #d4a843;
             border-radius: 50%;
         }
 
@@ -244,8 +251,8 @@ function imgSrc($img, $prefix = '../../assets/')
         }
 
         .hero-bar {
-            background: linear-gradient(135deg, #0a1225, #070711);
-            border-bottom: 1px solid #1a1a2e;
+            background: linear-gradient(135deg, #0a1225, #080808);
+            border-bottom: 1px solid #252525;
             padding: 32px 0;
         }
 
@@ -256,7 +263,7 @@ function imgSrc($img, $prefix = '../../assets/')
         }
 
         .hero-bar h1 span {
-            color: #00ff88;
+            color: #d4a843;
         }
 
         .hero-bar p {
@@ -265,8 +272,8 @@ function imgSrc($img, $prefix = '../../assets/')
         }
 
         .filter-bar {
-            background: #0d0d1a;
-            border-bottom: 1px solid #1a1a2e;
+            background: #111111;
+            border-bottom: 1px solid #252525;
             padding: 16px 0;
             position: sticky;
             top: 65px;
@@ -274,8 +281,8 @@ function imgSrc($img, $prefix = '../../assets/')
         }
 
         .search-input {
-            background: #111120;
-            border: 1px solid #1a1a2e;
+            background: #181818;
+            border: 1px solid #252525;
             color: #fff;
             border-radius: 10px;
             padding: 10px 16px;
@@ -285,8 +292,8 @@ function imgSrc($img, $prefix = '../../assets/')
 
         .search-input:focus {
             outline: none;
-            border-color: #00ff88;
-            box-shadow: 0 0 0 3px rgba(0, 255, 136, 0.08);
+            border-color: #d4a843;
+            box-shadow: 0 0 0 3px rgba(212, 168, 67, 0.08);
         }
 
         .search-input::placeholder {
@@ -294,8 +301,8 @@ function imgSrc($img, $prefix = '../../assets/')
         }
 
         .filter-select {
-            background: #111120;
-            border: 1px solid #1a1a2e;
+            background: #181818;
+            border: 1px solid #252525;
             color: #fff;
             border-radius: 10px;
             padding: 10px 14px;
@@ -305,11 +312,11 @@ function imgSrc($img, $prefix = '../../assets/')
 
         .filter-select:focus {
             outline: none;
-            border-color: #00ff88;
+            border-color: #d4a843;
         }
 
         .filter-select option {
-            background: #111120;
+            background: #181818;
         }
 
         .results-count {
@@ -318,7 +325,7 @@ function imgSrc($img, $prefix = '../../assets/')
         }
 
         .results-count strong {
-            color: #00ff88;
+            color: #d4a843;
         }
 
         .toast-container {
@@ -330,7 +337,7 @@ function imgSrc($img, $prefix = '../../assets/')
 
         .toast-msg {
             background: #0d1f0d;
-            border: 1px solid rgba(0, 255, 136, 0.3);
+            border: 1px solid rgba(212, 168, 67, 0.3);
             border-radius: 12px;
             padding: 14px 20px;
             display: flex;
@@ -342,7 +349,7 @@ function imgSrc($img, $prefix = '../../assets/')
         }
 
         .toast-msg i {
-            color: #00ff88;
+            color: #d4a843;
             font-size: 1.1rem;
         }
 
@@ -363,8 +370,8 @@ function imgSrc($img, $prefix = '../../assets/')
         }
 
         .prod-card {
-            background: #0d0d1a;
-            border: 1px solid #1a1a2e;
+            background: #111111;
+            border: 1px solid #252525;
             border-radius: 18px;
             overflow: hidden;
             transition: all 0.3s;
@@ -374,7 +381,7 @@ function imgSrc($img, $prefix = '../../assets/')
         }
 
         .prod-card:hover {
-            border-color: rgba(0, 255, 136, 0.3);
+            border-color: rgba(212, 168, 67, 0.3);
             transform: translateY(-4px);
             box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
         }
@@ -382,7 +389,7 @@ function imgSrc($img, $prefix = '../../assets/')
         .prod-img {
             position: relative;
             height: 220px;
-            background: linear-gradient(135deg, #111120, #0a0a14);
+            background: linear-gradient(135deg, #181818, #0a0a14);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -414,7 +421,7 @@ function imgSrc($img, $prefix = '../../assets/')
         }
 
         .badge-nuevo {
-            background: #00ff88;
+            background: #d4a843;
             color: #000;
         }
 
@@ -490,9 +497,9 @@ function imgSrc($img, $prefix = '../../assets/')
 
         .prod-cat {
             display: inline-block;
-            background: rgba(0, 255, 136, 0.06);
-            border: 1px solid rgba(0, 255, 136, 0.12);
-            color: #00ff88;
+            background: rgba(212, 168, 67, 0.06);
+            border: 1px solid rgba(212, 168, 67, 0.12);
+            color: #d4a843;
             border-radius: 6px;
             padding: 2px 8px;
             font-size: 0.7rem;
@@ -510,7 +517,7 @@ function imgSrc($img, $prefix = '../../assets/')
         .prod-precio {
             font-size: 1.3rem;
             font-weight: 800;
-            color: #00ff88;
+            color: #d4a843;
         }
 
         .stock-badge {
@@ -521,9 +528,9 @@ function imgSrc($img, $prefix = '../../assets/')
         }
 
         .stock-ok {
-            background: rgba(0, 255, 136, 0.08);
-            color: #00ff88;
-            border: 1px solid rgba(0, 255, 136, 0.2);
+            background: rgba(212, 168, 67, 0.08);
+            color: #d4a843;
+            border: 1px solid rgba(212, 168, 67, 0.2);
         }
 
         .stock-low {
@@ -539,7 +546,7 @@ function imgSrc($img, $prefix = '../../assets/')
         }
 
         .btn-add {
-            background: #00ff88;
+            background: #d4a843;
             color: #000;
             font-weight: 700;
             border: none;
@@ -556,13 +563,13 @@ function imgSrc($img, $prefix = '../../assets/')
         }
 
         .btn-add:hover {
-            background: #00cc6a;
+            background: #c89a30;
             transform: translateY(-1px);
-            box-shadow: 0 4px 15px rgba(0, 255, 136, 0.25);
+            box-shadow: 0 4px 15px rgba(212, 168, 67, 0.25);
         }
 
         .btn-add:disabled {
-            background: #1a1a2e;
+            background: #252525;
             color: #444;
             cursor: not-allowed;
             transform: none;
@@ -638,7 +645,7 @@ function imgSrc($img, $prefix = '../../assets/')
     <div class="filter-bar">
         <div class="container">
             <form method="GET" class="row g-3 align-items-center">
-                <div class="col-md-5">
+                <div class="col-md-4">
                     <div class="position-relative">
                         <i class="bi bi-search"
                             style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:#444;font-size:0.9rem;"></i>
@@ -647,7 +654,7 @@ function imgSrc($img, $prefix = '../../assets/')
                             value="<?= htmlspecialchars($buscar) ?>">
                     </div>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <select name="categoria" class="filter-select w-100" onchange="this.form.submit()">
                         <option value="">Todas las categorías</option>
                         <?php while ($c = $categorias->fetch_assoc()): ?>
@@ -658,12 +665,20 @@ function imgSrc($img, $prefix = '../../assets/')
                     </select>
                 </div>
                 <div class="col-md-2">
+                    <select name="marca" class="filter-select w-100" onchange="this.form.submit()">
+                        <option value="">Todas las marcas</option>
+                        <?php while ($m = $marcas->fetch_assoc()): ?>
+                            <option value="<?= htmlspecialchars($m['marca']) ?>" <?= $marca_fil === $m['marca'] ? 'selected' : '' ?>>
+                                <?= htmlspecialchars($m['marca']) ?>
+                            </option>
+                        <?php endwhile; ?>
+                    </select>
+                </div>
+                <div class="col-md-2">
                     <select name="orden" class="filter-select w-100" onchange="this.form.submit()">
                         <option value="reciente" <?= $orden == 'reciente' ? 'selected' : '' ?>>Más recientes</option>
-                        <option value="precio_asc" <?= $orden == 'precio_asc' ? 'selected' : '' ?>>Precio: menor a mayor
-                        </option>
-                        <option value="precio_desc" <?= $orden == 'precio_desc' ? 'selected' : '' ?>>Precio: mayor a menor
-                        </option>
+                        <option value="precio_asc" <?= $orden == 'precio_asc' ? 'selected' : '' ?>>Precio: menor a mayor</option>
+                        <option value="precio_desc" <?= $orden == 'precio_desc' ? 'selected' : '' ?>>Precio: mayor a menor</option>
                         <option value="nombre" <?= $orden == 'nombre' ? 'selected' : '' ?>>Nombre A-Z</option>
                     </select>
                 </div>
@@ -671,9 +686,9 @@ function imgSrc($img, $prefix = '../../assets/')
                     <button type="submit" class="btn-add" style="padding:10px 16px;width:auto;border-radius:8px;">
                         <i class="bi bi-search"></i>
                     </button>
-                    <?php if ($buscar || $id_cat): ?>
+                    <?php if ($buscar || $id_cat || $marca_fil): ?>
                         <a href="productos.php"
-                            style="background:rgba(255,255,255,0.05);border:1px solid #1a1a2e;color:#aaa;border-radius:8px;padding:10px 14px;font-size:0.82rem;text-decoration:none;white-space:nowrap;">
+                            style="background:rgba(255,255,255,0.05);border:1px solid #252525;color:#aaa;border-radius:8px;padding:10px 14px;font-size:0.82rem;text-decoration:none;white-space:nowrap;">
                             <i class="bi bi-x-lg"></i>
                         </a>
                     <?php endif; ?>
@@ -681,9 +696,9 @@ function imgSrc($img, $prefix = '../../assets/')
             </form>
             <div class="mt-2 results-count">
                 Mostrando <strong><?= $total_prods ?></strong> producto<?= $total_prods != 1 ? 's' : '' ?>
-                <?php if ($buscar): ?> para "<strong
-                        style="color:#fff"><?= htmlspecialchars($buscar) ?></strong>"<?php endif; ?>
+                <?php if ($buscar): ?> para "<strong style="color:#fff"><?= htmlspecialchars($buscar) ?></strong>"<?php endif; ?>
                 <?php if ($id_cat): ?> en esta categoría<?php endif; ?>
+                <?php if ($marca_fil): ?> · marca <strong style="color:#d4a843"><?= htmlspecialchars($marca_fil) ?></strong><?php endif; ?>
             </div>
         </div>
     </div>
@@ -706,7 +721,7 @@ function imgSrc($img, $prefix = '../../assets/')
                     <h4>No se encontraron productos</h4>
                     <p>Intenta con otros términos de búsqueda o explora todas las categorías</p>
                     <a href="productos.php"
-                        style="display:inline-block;margin-top:16px;background:#00ff88;color:#000;font-weight:700;border-radius:10px;padding:10px 24px;text-decoration:none;">Ver
+                        style="display:inline-block;margin-top:16px;background:#d4a843;color:#000;font-weight:700;border-radius:10px;padding:10px 24px;text-decoration:none;">Ver
                         todos</a>
                 </div>
             <?php else: ?>
@@ -724,7 +739,7 @@ function imgSrc($img, $prefix = '../../assets/')
                                 <div class="prod-img">
                                     <?php if ($img_src): ?>
                                         <img src="<?= $img_src ?>" alt="<?= htmlspecialchars($p['nombre']) ?>">
-                                    <?php else: ?>📦<?php endif; ?>
+                                    <?php else: ?><i class="bi bi-box" style="font-size:2rem;opacity:0.3;"></i><?php endif; ?>
                                     <span
                                         class="prod-badge badge-<?= $badges[$bi % 3] ?>"><?= ucfirst($badges[$bi % 3]) ?></span>
                                     <form method="POST" style="position:absolute;top:12px;right:12px;"

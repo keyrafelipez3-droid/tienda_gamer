@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 session_start();
 if (!isset($_SESSION['usuario_id'])) {
     header('Location: ../auth/login.php');
@@ -99,6 +99,10 @@ if (!empty($_SESSION['carrito'])) {
     }
 }
 $cant_items = array_sum($_SESSION['carrito'] ?? []);
+$fav_c = $conn->prepare("SELECT COUNT(*) as c FROM favorito WHERE id_usuario=?");
+$fav_c->bind_param("i", $_SESSION['usuario_id']);
+$fav_c->execute();
+$cant_favoritos = $fav_c->get_result()->fetch_assoc()['c'];
 
 function imgSrc($img, $prefix = '../../assets/')
 {
@@ -126,7 +130,7 @@ function imgSrc($img, $prefix = '../../assets/')
         }
 
         body {
-            background: #070711;
+            background: #080808;
             color: #fff;
             font-family: 'Inter', sans-serif;
             min-height: 100vh;
@@ -137,14 +141,14 @@ function imgSrc($img, $prefix = '../../assets/')
         }
 
         ::-webkit-scrollbar-thumb {
-            background: #1a1a2e;
+            background: #252525;
             border-radius: 2px;
         }
 
         .navbar {
             background: rgba(13, 13, 26, 0.95);
             backdrop-filter: blur(10px);
-            border-bottom: 1px solid #1a1a2e;
+            border-bottom: 1px solid #252525;
             padding: 14px 0;
             position: sticky;
             top: 0;
@@ -154,7 +158,7 @@ function imgSrc($img, $prefix = '../../assets/')
         .nav-brand {
             font-size: 1.5rem;
             font-weight: 800;
-            color: #00ff88;
+            color: #d4a843;
             text-decoration: none;
         }
 
@@ -171,7 +175,7 @@ function imgSrc($img, $prefix = '../../assets/')
             font-size: 0.875rem;
             padding: 8px 14px;
             border-radius: 8px;
-            border: 1px solid #1a1a2e;
+            border: 1px solid #252525;
             transition: all 0.2s;
         }
 
@@ -179,6 +183,14 @@ function imgSrc($img, $prefix = '../../assets/')
             color: #fff;
             border-color: #333;
         }
+
+        .nav-icon-btn { display:flex;align-items:center;gap:6px;color:#aaa;text-decoration:none;font-size:0.85rem;padding:8px 14px;border-radius:8px;transition:all 0.2s;position:relative; }
+        .nav-icon-btn:hover { color:#fff;background:rgba(255,255,255,0.05); }
+        .nav-badge { position:absolute;top:-4px;right:-4px;background:#d4a843;color:#000;font-size:0.6rem;font-weight:800;width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center; }
+        .nav-badge.fav { background:#ff4466; }
+        .user-chip { display:flex;align-items:center;gap:8px;background:rgba(212,168,67,0.06);border:1px solid rgba(212,168,67,0.15);border-radius:20px;padding:6px 14px;font-size:0.82rem;text-decoration:none;color:#fff;transition:all 0.2s; }
+        .user-chip:hover { background:rgba(212,168,67,0.1);color:#d4a843; }
+        .user-chip .dot { width:8px;height:8px;background:#d4a843;border-radius:50%; }
 
         .btn-logout-sm {
             background: rgba(255, 68, 68, 0.08);
@@ -206,7 +218,7 @@ function imgSrc($img, $prefix = '../../assets/')
         }
 
         .page-title span {
-            color: #00ff88;
+            color: #d4a843;
         }
 
         .page-sub {
@@ -215,8 +227,8 @@ function imgSrc($img, $prefix = '../../assets/')
         }
 
         .cart-item {
-            background: #0d0d1a;
-            border: 1px solid #1a1a2e;
+            background: #111111;
+            border: 1px solid #252525;
             border-radius: 16px;
             padding: 20px;
             margin-bottom: 12px;
@@ -231,13 +243,13 @@ function imgSrc($img, $prefix = '../../assets/')
             width: 80px;
             height: 80px;
             border-radius: 12px;
-            background: #111120;
+            background: #181818;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 2rem;
             overflow: hidden;
-            border: 1px solid #1a1a2e;
+            border: 1px solid #252525;
             flex-shrink: 0;
         }
 
@@ -260,9 +272,9 @@ function imgSrc($img, $prefix = '../../assets/')
 
         .item-cat {
             display: inline-block;
-            background: rgba(0, 255, 136, 0.06);
-            border: 1px solid rgba(0, 255, 136, 0.12);
-            color: #00ff88;
+            background: rgba(212, 168, 67, 0.06);
+            border: 1px solid rgba(212, 168, 67, 0.12);
+            color: #d4a843;
             border-radius: 6px;
             padding: 2px 8px;
             font-size: 0.7rem;
@@ -286,8 +298,8 @@ function imgSrc($img, $prefix = '../../assets/')
             width: 30px;
             height: 30px;
             border-radius: 8px;
-            background: #111120;
-            border: 1px solid #1a1a2e;
+            background: #181818;
+            border: 1px solid #252525;
             color: #fff;
             display: flex;
             align-items: center;
@@ -298,14 +310,14 @@ function imgSrc($img, $prefix = '../../assets/')
         }
 
         .qty-btn:hover {
-            border-color: #00ff88;
-            color: #00ff88;
+            border-color: #d4a843;
+            color: #d4a843;
         }
 
         .qty-input {
             width: 50px;
-            background: #111120;
-            border: 1px solid #1a1a2e;
+            background: #181818;
+            border: 1px solid #252525;
             color: #fff;
             border-radius: 8px;
             padding: 4px;
@@ -315,13 +327,13 @@ function imgSrc($img, $prefix = '../../assets/')
 
         .qty-input:focus {
             outline: none;
-            border-color: #00ff88;
+            border-color: #d4a843;
         }
 
         .item-subtotal {
             font-size: 1.1rem;
             font-weight: 800;
-            color: #00ff88;
+            color: #d4a843;
             text-align: right;
         }
 
@@ -341,8 +353,8 @@ function imgSrc($img, $prefix = '../../assets/')
         }
 
         .summary-card {
-            background: #0d0d1a;
-            border: 1px solid #1a1a2e;
+            background: #111111;
+            border: 1px solid #252525;
             border-radius: 16px;
             padding: 24px;
             position: sticky;
@@ -354,7 +366,7 @@ function imgSrc($img, $prefix = '../../assets/')
             font-weight: 700;
             margin-bottom: 20px;
             padding-bottom: 16px;
-            border-bottom: 1px solid #1a1a2e;
+            border-bottom: 1px solid #252525;
         }
 
         .summary-row {
@@ -375,7 +387,7 @@ function imgSrc($img, $prefix = '../../assets/')
 
         .summary-divider {
             border: none;
-            border-top: 1px solid #1a1a2e;
+            border-top: 1px solid #252525;
             margin: 16px 0;
         }
 
@@ -394,11 +406,11 @@ function imgSrc($img, $prefix = '../../assets/')
         .summary-total .value {
             font-size: 1.8rem;
             font-weight: 800;
-            color: #00ff88;
+            color: #d4a843;
         }
 
         .btn-checkout {
-            background: #00ff88;
+            background: #d4a843;
             color: #000;
             font-weight: 800;
             border: none;
@@ -415,14 +427,14 @@ function imgSrc($img, $prefix = '../../assets/')
         }
 
         .btn-checkout:hover {
-            background: #00cc6a;
+            background: #c89a30;
             transform: translateY(-1px);
-            box-shadow: 0 6px 20px rgba(0, 255, 136, 0.3);
+            box-shadow: 0 6px 20px rgba(212, 168, 67, 0.3);
         }
 
         .btn-clear {
             background: transparent;
-            border: 1px solid #1a1a2e;
+            border: 1px solid #252525;
             color: #555;
             border-radius: 10px;
             padding: 10px;
@@ -451,7 +463,7 @@ function imgSrc($img, $prefix = '../../assets/')
         }
 
         .btn-shop {
-            background: #00ff88;
+            background: #d4a843;
             color: #000;
             font-weight: 700;
             border-radius: 12px;
@@ -464,7 +476,7 @@ function imgSrc($img, $prefix = '../../assets/')
         }
 
         .btn-shop:hover {
-            background: #00cc6a;
+            background: #c89a30;
             color: #000;
         }
 
@@ -485,7 +497,7 @@ function imgSrc($img, $prefix = '../../assets/')
         }
 
         .secure-badge i {
-            color: #00ff88;
+            color: #d4a843;
         }
 
         .toast-container {
@@ -497,7 +509,7 @@ function imgSrc($img, $prefix = '../../assets/')
 
         .toast-msg {
             background: #0d1f0d;
-            border: 1px solid rgba(0, 255, 136, 0.3);
+            border: 1px solid rgba(212, 168, 67, 0.3);
             border-radius: 12px;
             padding: 14px 20px;
             display: flex;
@@ -528,9 +540,26 @@ function imgSrc($img, $prefix = '../../assets/')
     <nav class="navbar">
         <div class="container">
             <div class="d-flex justify-content-between align-items-center">
-                <a href="#" class="nav-brand">Gamer<span>Zone</span></a>
+                <a href="productos.php" class="nav-brand">Gamer<span>Zone</span></a>
                 <div class="d-flex align-items-center gap-2">
-                    <a href="productos.php" class="btn-back"><i class="bi bi-arrow-left"></i> Seguir comprando</a>
+                    <a href="favoritos.php" class="nav-icon-btn">
+                        <i class="bi bi-heart"></i>
+                        <span class="d-none d-md-inline">Favoritos</span>
+                        <?php if ($cant_favoritos > 0): ?><span class="nav-badge fav"><?= $cant_favoritos ?></span><?php endif; ?>
+                    </a>
+                    <a href="carrito.php" class="nav-icon-btn" style="color:#d4a843;">
+                        <i class="bi bi-cart3"></i>
+                        <span class="d-none d-md-inline">Carrito</span>
+                        <?php if ($cant_items > 0): ?><span class="nav-badge"><?= $cant_items ?></span><?php endif; ?>
+                    </a>
+                    <a href="historial.php" class="nav-icon-btn">
+                        <i class="bi bi-bag-check"></i>
+                        <span class="d-none d-md-inline">Pedidos</span>
+                    </a>
+                    <a href="perfil.php" class="user-chip d-none d-lg-flex">
+                        <div class="dot"></div>
+                        <span><?= htmlspecialchars($_SESSION['usuario_nombre']) ?></span>
+                    </a>
                     <form action="../../controllers/auth_controller.php" method="POST">
                         <input type="hidden" name="action" value="logout">
                         <button class="btn-logout-sm"><i class="bi bi-box-arrow-right me-1"></i>Salir</button>
@@ -545,7 +574,7 @@ function imgSrc($img, $prefix = '../../assets/')
             <div class="toast-msg" id="toastMsg"
                 style="<?= ($_SESSION['msg_tipo'] ?? 'ok') === 'err' ? 'background:#2a0d0d;border-color:rgba(239,68,68,0.3);' : '' ?>">
                 <i class="bi <?= ($_SESSION['msg_tipo'] ?? 'ok') === 'ok' ? 'bi-check-circle-fill' : 'bi-trash-fill' ?>"
-                    style="color:<?= ($_SESSION['msg_tipo'] ?? 'ok') === 'ok' ? '#00ff88' : '#ef4444' ?>"></i>
+                    style="color:<?= ($_SESSION['msg_tipo'] ?? 'ok') === 'ok' ? '#d4a843' : '#ef4444' ?>"></i>
                 <span><?= $_SESSION['msg_carrito'] ?></span>
             </div>
         </div>
@@ -563,7 +592,7 @@ function imgSrc($img, $prefix = '../../assets/')
 
             <?php if (empty($carrito_items)): ?>
                 <div class="empty-cart">
-                    <div style="font-size:5rem;margin-bottom:20px;opacity:0.3;">🛒</div>
+                    <i class="bi bi-cart3" style="font-size:4rem;margin-bottom:20px;opacity:0.2;display:block;"></i>
                     <h3>Tu carrito está vacío</h3>
                     <p style="color:#444;font-size:0.875rem;margin-bottom:24px;">Agrega productos desde la tienda para
                         comenzar</p>
@@ -580,7 +609,7 @@ function imgSrc($img, $prefix = '../../assets/')
                                     <div class="item-img">
                                         <?php if ($img): ?>
                                             <img src="<?= $img ?>" alt="">
-                                        <?php else: ?>📦<?php endif; ?>
+                                        <?php else: ?><i class="bi bi-box" style="font-size:2rem;opacity:0.3;"></i><?php endif; ?>
                                     </div>
                                     <div class="flex-grow-1">
                                         <div class="item-name"><?= htmlspecialchars($item['nombre']) ?></div>
@@ -619,14 +648,14 @@ function imgSrc($img, $prefix = '../../assets/')
 
                     <div class="col-lg-4">
                         <div class="summary-card">
-                            <div class="summary-title">📋 Resumen del pedido</div>
+                            <div class="summary-title">Resumen del pedido</div>
                             <div class="summary-row">
                                 <span class="label">Productos (<?= $cant_items ?>)</span>
                                 <span class="value">Bs. <?= number_format($total, 2) ?></span>
                             </div>
                             <div class="summary-row">
                                 <span class="label">Envío</span>
-                                <span class="value" style="color:#00ff88;">Gratis</span>
+                                <span class="value" style="color:#d4a843;">Gratis</span>
                             </div>
                             <div class="summary-row">
                                 <span class="label">Descuento</span>

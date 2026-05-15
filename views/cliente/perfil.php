@@ -1,12 +1,13 @@
-<?php
+﻿<?php
 session_start();
 if (!isset($_SESSION['usuario_id'])) {
     header('Location: ../auth/login.php');
     exit;
 }
 require_once '../../config/db.php';
-// ── PROCESAR TOTP ──
 require_once '../../config/totp.php';
+
+$id_usuario = $_SESSION['usuario_id'];
 
 if (isset($_POST['activar_totp'])) {
     $secret = generarSecretTOTP();
@@ -44,13 +45,9 @@ if (isset($_POST['desactivar_totp'])) {
     exit;
 }
 
-$id_usuario = $_SESSION['usuario_id'];
-
-// Actualizar perfil
 if (isset($_POST['actualizar_perfil'])) {
     $nombre = trim($_POST['nombre']);
     $correo = trim($_POST['correo']);
-
     if (empty($nombre) || empty($correo)) {
         $_SESSION['error'] = 'Nombre y correo son obligatorios.';
     } elseif (!filter_var($correo, FILTER_VALIDATE_EMAIL)) {
@@ -74,17 +71,14 @@ if (isset($_POST['actualizar_perfil'])) {
     exit;
 }
 
-// Cambiar contraseña
 if (isset($_POST['cambiar_pass'])) {
-    $actual = $_POST['pass_actual'];
-    $nueva = $_POST['pass_nueva'];
+    $actual  = $_POST['pass_actual'];
+    $nueva   = $_POST['pass_nueva'];
     $confirm = $_POST['pass_confirm'];
-
     $stmt = $conn->prepare("SELECT contrasena FROM usuario WHERE id_usuario=?");
     $stmt->bind_param("i", $id_usuario);
     $stmt->execute();
     $hash = $stmt->get_result()->fetch_assoc()['contrasena'];
-
     if (!password_verify($actual, $hash)) {
         $_SESSION['error'] = 'La contraseña actual es incorrecta.';
     } elseif (strlen($nueva) < 6) {
@@ -102,13 +96,11 @@ if (isset($_POST['cambiar_pass'])) {
     exit;
 }
 
-// Datos del usuario
 $stmt = $conn->prepare("SELECT * FROM usuario WHERE id_usuario=?");
 $stmt->bind_param("i", $id_usuario);
 $stmt->execute();
 $user = $stmt->get_result()->fetch_assoc();
 
-// Estadísticas
 $total_compras = $conn->prepare("SELECT COUNT(*) as t FROM venta WHERE id_usuario=?");
 $total_compras->bind_param("i", $id_usuario);
 $total_compras->execute();
@@ -125,853 +117,929 @@ $total_favs->execute();
 $total_favs = $total_favs->get_result()->fetch_assoc()['t'];
 
 $cant_carrito = array_sum($_SESSION['carrito'] ?? []);
+
+// Nivel
+if ($total_compras >= 10) {
+    $rank_label = 'Gold Gamer'; $rank_key = 'gold';
+} elseif ($total_compras >= 5) {
+    $rank_label = 'Silver Gamer'; $rank_key = 'silver';
+} elseif ($total_compras >= 1) {
+    $rank_label = 'Bronze Gamer'; $rank_key = 'bronze';
+} else {
+    $rank_label = 'Rookie'; $rank_key = 'rookie';
+}
+$rank_next = $total_compras >= 10 ? 10 : ($total_compras >= 5 ? 10 : ($total_compras >= 1 ? 5 : 1));
+$rank_pct  = $total_compras >= 10 ? 100 : min(99, round(($total_compras / $rank_next) * 100));
 ?>
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mi Perfil - GamerZone</title>
+    <title>Mi Perfil — GamerZone</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
-        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        .form-input:invalid:not(:placeholder-shown) {
-            border-color: #ef4444;
-            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.08);
+        :root {
+            --bg:       #080808;
+            --card:     #111111;
+            --raised:   #181818;
+            --border:   #252525;
+            --green:    #d4a843;
+            --green-dim:rgba(212,168,67,0.08);
+            --green-mid:rgba(212,168,67,0.15);
+            --purple:   #7c6af7;
+            --gold:     #f5a623;
+            --silver:   #94a3c8;
+            --bronze:   #cd7f32;
+            --red:      #ef4444;
+            --text:     #f0f0f8;
+            --muted:    #55556a;
+            --sub:      #8888a8;
         }
 
-        .form-input:valid:not(:placeholder-shown) {
-            border-color: #00ff88;
-            box-shadow: 0 0 0 3px rgba(0, 255, 136, 0.08);
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
         body {
-            background: #070711;
-            color: #fff;
+            background: var(--bg);
+            color: var(--text);
             font-family: 'Inter', sans-serif;
             min-height: 100vh;
         }
 
-        ::-webkit-scrollbar {
-            width: 4px;
-        }
+        /* ── SCROLLBAR ── */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: var(--bg); }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
 
-        ::-webkit-scrollbar-thumb {
-            background: #1a1a2e;
-            border-radius: 2px;
-        }
-
+        /* ── NAVBAR ── */
         .navbar {
-            background: rgba(13, 13, 26, 0.95);
-            backdrop-filter: blur(10px);
-            border-bottom: 1px solid #1a1a2e;
-            padding: 14px 0;
+            background: rgba(7,7,17,0.92);
+            backdrop-filter: blur(14px);
+            border-bottom: 1px solid var(--border);
+            padding: 12px 0;
             position: sticky;
             top: 0;
-            z-index: 1000;
+            z-index: 200;
         }
-
         .nav-brand {
-            font-size: 1.5rem;
-            font-weight: 800;
-            color: #00ff88;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--green);
             text-decoration: none;
+            letter-spacing: -0.5px;
         }
-
-        .nav-brand span {
-            color: #fff;
-        }
-
-        .nav-icon-btn {
+        .nav-brand span { color: var(--text); }
+        .nav-actions { display: flex; align-items: center; gap: 4px; }
+        .nav-btn {
             display: flex;
             align-items: center;
-            gap: 6px;
-            color: #aaa;
+            justify-content: center;
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            color: var(--sub);
             text-decoration: none;
-            font-size: 0.85rem;
-            padding: 8px 14px;
-            border-radius: 8px;
-            transition: all 0.2s;
+            font-size: 1rem;
+            transition: all .18s;
             position: relative;
         }
-
-        .nav-icon-btn:hover {
-            color: #fff;
-            background: rgba(255, 255, 255, 0.05);
-        }
-
+        .nav-btn:hover { color: var(--text); background: rgba(255,255,255,.05); }
         .nav-badge {
             position: absolute;
-            top: -4px;
-            right: -4px;
-            background: #00ff88;
+            top: 4px; right: 4px;
+            background: var(--green);
             color: #000;
-            font-size: 0.6rem;
+            font-size: 0.5rem;
             font-weight: 800;
-            width: 18px;
-            height: 18px;
+            width: 14px; height: 14px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
         }
-
-        .btn-logout-sm {
-            background: rgba(255, 68, 68, 0.08);
-            border: 1px solid rgba(255, 68, 68, 0.2);
-            color: #ff6b6b;
-            border-radius: 8px;
-            padding: 8px 14px;
+        .btn-exit {
+            background: rgba(239,68,68,.07);
+            border: 1px solid rgba(239,68,68,.18);
+            color: #f87171;
+            border-radius: 10px;
+            padding: 7px 16px;
             font-size: 0.8rem;
+            font-weight: 600;
             cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .btn-logout-sm:hover {
-            background: rgba(255, 68, 68, 0.15);
-        }
-
-        .content {
-            padding: 40px 0;
-        }
-
-        /* PERFIL HEADER */
-        .profile-header {
-            background: linear-gradient(135deg, rgba(0, 255, 136, 0.06), rgba(99, 102, 241, 0.04));
-            border: 1px solid rgba(0, 255, 136, 0.12);
-            border-radius: 20px;
-            padding: 32px;
-            margin-bottom: 28px;
+            transition: all .18s;
             display: flex;
             align-items: center;
-            gap: 24px;
-            flex-wrap: wrap;
+            gap: 6px;
         }
+        .btn-exit:hover { background: rgba(239,68,68,.14); color: #fca5a5; }
 
-        .avatar-big {
-            width: 80px;
-            height: 80px;
+        /* ── ALERTS ── */
+        .alert-ok, .alert-err {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 16px;
+            border-radius: 12px;
+            font-size: 0.875rem;
+            margin-bottom: 20px;
+        }
+        .alert-ok  { background: rgba(212,168,67,.06); border: 1px solid rgba(212,168,67,.2); color: var(--green); }
+        .alert-err { background: rgba(239,68,68,.06);  border: 1px solid rgba(239,68,68,.2);  color: var(--red); }
+
+        /* ── PROFILE HEADER ── */
+        .profile-header {
+            background: var(--card);
+            border: 1px solid var(--border);
             border-radius: 20px;
-            background: rgba(0, 255, 136, 0.1);
-            border: 2px solid rgba(0, 255, 136, 0.3);
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+        .profile-header-top {
+            padding: 28px 32px 24px;
+            display: flex;
+            align-items: center;
+            gap: 22px;
+            flex-wrap: wrap;
+            border-top: 3px solid var(--green);
+        }
+        .avatar {
+            width: 72px;
+            height: 72px;
+            border-radius: 16px;
+            background: linear-gradient(135deg, rgba(212,168,67,.12), rgba(212,168,67,.12));
+            border: 1.5px solid rgba(212,168,67,.25);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 2rem;
-            font-weight: 800;
-            color: #00ff88;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--green);
             flex-shrink: 0;
         }
-
-        .profile-info h2 {
-            font-size: 1.5rem;
-            font-weight: 800;
+        .profile-meta { flex: 1; min-width: 0; }
+        .profile-name {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--text);
+            line-height: 1.2;
             margin-bottom: 4px;
         }
-
-        .profile-info p {
-            color: #555;
-            font-size: 0.875rem;
-        }
-
-        .profile-badge {
+        .profile-email { color: var(--sub); font-size: 0.82rem; margin-bottom: 8px; }
+        .profile-tag {
             display: inline-flex;
             align-items: center;
-            gap: 6px;
-            background: rgba(0, 255, 136, 0.08);
-            border: 1px solid rgba(0, 255, 136, 0.2);
-            color: #00ff88;
-            border-radius: 8px;
-            padding: 4px 12px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            margin-top: 8px;
+            gap: 5px;
+            background: var(--green-dim);
+            border: 1px solid rgba(212,168,67,.18);
+            color: var(--green);
+            border-radius: 6px;
+            padding: 3px 10px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: .4px;
+            text-transform: uppercase;
         }
+        .profile-since {
+            text-align: right;
+            flex-shrink: 0;
+        }
+        .profile-since-label { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 4px; }
+        .profile-since-date  { font-size: 0.95rem; font-weight: 700; color: var(--text); }
 
-        /* STATS */
-        .stats-row {
+        /* stats strip inside header */
+        .stats-strip {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 16px;
-            margin-bottom: 28px;
+            border-top: 1px solid var(--border);
         }
-
-        .stat-card {
-            background: #0d0d1a;
-            border: 1px solid #1a1a2e;
-            border-radius: 14px;
-            padding: 20px;
-            text-align: center;
-            transition: all 0.2s;
+        .stat-cell {
+            padding: 16px 24px;
+            border-right: 1px solid var(--border);
         }
-
-        .stat-card:hover {
-            border-color: rgba(0, 255, 136, 0.2);
-        }
-
-        .stat-num {
-            font-size: 1.8rem;
-            font-weight: 800;
-            color: #00ff88;
-            line-height: 1;
-        }
-
-        .stat-label {
-            font-size: 0.78rem;
-            color: #555;
-            margin-top: 6px;
-        }
-
-        .stat-icon {
+        .stat-cell:last-child { border-right: none; }
+        .stat-val {
+            font-family: 'Space Grotesk', sans-serif;
             font-size: 1.5rem;
-            margin-bottom: 8px;
+            font-weight: 700;
+            color: var(--text);
+            line-height: 1;
+            margin-bottom: 3px;
         }
+        .stat-val.accent { color: var(--green); }
+        .stat-lbl { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; }
 
-        /* TABS */
-        .tab-nav {
+        /* ── LAYOUT ── */
+        .page-body { padding: 32px 0 60px; }
+
+        /* ── TABS ── */
+        .tab-row {
             display: flex;
-            gap: 4px;
-            background: #0d0d1a;
-            border: 1px solid #1a1a2e;
+            gap: 2px;
+            background: var(--card);
+            border: 1px solid var(--border);
             border-radius: 12px;
             padding: 4px;
-            margin-bottom: 24px;
+            margin-bottom: 20px;
         }
-
         .tab-btn {
             flex: 1;
-            padding: 10px;
+            padding: 9px 12px;
             border: none;
             border-radius: 8px;
             background: transparent;
-            color: #555;
-            font-size: 0.875rem;
+            color: var(--muted);
+            font-size: 0.8rem;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all .15s;
             font-family: 'Inter', sans-serif;
+            letter-spacing: .2px;
         }
-
         .tab-btn.active {
-            background: rgba(0, 255, 136, 0.1);
-            color: #00ff88;
-            border: 1px solid rgba(0, 255, 136, 0.2);
+            background: var(--green-mid);
+            color: var(--green);
+            border: 1px solid rgba(212,168,67,.2);
         }
+        .tab-btn:hover:not(.active) { color: var(--text); background: rgba(255,255,255,.03); }
+        .tab-pane { display: none; }
+        .tab-pane.active { display: block; }
 
-        .tab-btn:hover:not(.active) {
-            color: #fff;
-            background: rgba(255, 255, 255, 0.04);
-        }
-
-        .tab-pane {
-            display: none;
-        }
-
-        .tab-pane.active {
-            display: block;
-        }
-
-        /* FORM CARD */
-        .form-card {
-            background: #0d0d1a;
-            border: 1px solid #1a1a2e;
+        /* ── CARD ── */
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border);
             border-radius: 16px;
-            padding: 28px;
+            padding: 24px;
         }
-
-        .form-card-title {
-            font-size: 1rem;
+        .card + .card { margin-top: 16px; }
+        .card-title {
+            font-size: 0.85rem;
             font-weight: 700;
+            color: var(--text);
             margin-bottom: 20px;
-            padding-bottom: 16px;
-            border-bottom: 1px solid #1a1a2e;
+            padding-bottom: 14px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
+        .card-title i { color: var(--green); }
 
-        .form-label {
-            font-size: 0.78rem;
-            font-weight: 600;
-            color: #aaa;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 8px;
+        /* ── FORM ── */
+        .f-label {
             display: block;
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: var(--sub);
+            text-transform: uppercase;
+            letter-spacing: .6px;
+            margin-bottom: 7px;
         }
-
-        .form-input {
+        .f-input {
             width: 100%;
-            background: #111120;
-            border: 1px solid #1a1a2e;
-            color: #fff;
+            background: var(--raised);
+            border: 1px solid var(--border);
+            color: var(--text);
             border-radius: 10px;
-            padding: 11px 14px;
+            padding: 10px 14px;
             font-size: 0.875rem;
-            transition: all 0.2s;
+            transition: border-color .15s, box-shadow .15s;
             font-family: 'Inter', sans-serif;
         }
-
-        .form-input:focus {
+        .f-input:focus {
             outline: none;
-            border-color: #00ff88;
-            box-shadow: 0 0 0 3px rgba(0, 255, 136, 0.08);
+            border-color: var(--green);
+            box-shadow: 0 0 0 3px rgba(212,168,67,.07);
         }
-
-        .form-input::placeholder {
-            color: #333;
-        }
-
-        .input-wrap {
-            position: relative;
-        }
-
+        .f-input::placeholder { color: var(--muted); }
+        .f-input:invalid:not(:placeholder-shown) { border-color: var(--red); }
+        .f-input:valid:not(:placeholder-shown)   { border-color: rgba(212,168,67,.35); }
+        .input-wrap { position: relative; }
+        .input-wrap .f-input { padding-right: 42px; }
         .toggle-pass {
             position: absolute;
-            right: 14px;
+            right: 13px;
             top: 50%;
             transform: translateY(-50%);
-            color: #444;
-            cursor: pointer;
-            font-size: 1rem;
-            transition: color 0.2s;
             background: none;
             border: none;
+            color: var(--muted);
+            cursor: pointer;
+            font-size: 0.95rem;
             padding: 0;
+            transition: color .15s;
         }
+        .toggle-pass:hover { color: var(--green); }
 
-        .toggle-pass:hover {
-            color: #00ff88;
-        }
-
-        .btn-save {
-            background: #00ff88;
+        .btn-primary {
+            background: var(--green);
             color: #000;
             font-weight: 700;
             border: none;
             border-radius: 10px;
-            padding: 11px 24px;
-            font-size: 0.875rem;
+            padding: 10px 22px;
+            font-size: 0.85rem;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all .18s;
+            font-family: 'Inter', sans-serif;
             display: inline-flex;
             align-items: center;
-            gap: 8px;
+            gap: 7px;
         }
+        .btn-primary:hover { background: #c89a30; transform: translateY(-1px); }
 
-        .btn-save:hover {
-            background: #00cc6a;
-            transform: translateY(-1px);
-        }
-
-        .alert-ok {
-            background: rgba(0, 255, 136, 0.06);
-            border: 1px solid rgba(0, 255, 136, 0.2);
-            color: #00ff88;
-            border-radius: 12px;
-            padding: 12px 16px;
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 0.875rem;
-        }
-
-        .alert-err {
-            background: rgba(239, 68, 68, 0.06);
-            border: 1px solid rgba(239, 68, 68, 0.2);
-            color: #ef4444;
-            border-radius: 12px;
-            padding: 12px 16px;
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 0.875rem;
-        }
-
-        /* INFO ROWS */
+        /* ── INFO ROWS ── */
         .info-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            padding: 13px 0;
+            border-bottom: 1px solid #0f0f1e;
+        }
+        .info-row:last-child { border-bottom: none; }
+        .info-row-label { font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; }
+        .info-row-val   { font-size: 0.85rem; font-weight: 600; }
+
+        /* ── SECURITY: status bar ── */
+        .totp-status {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             padding: 14px 0;
-            border-bottom: 1px solid #111;
+            border-bottom: 1px solid #0f0f1e;
+            margin-bottom: 16px;
         }
-
-        .info-row:last-child {
-            border-bottom: none;
+        .status-dot {
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
         }
+        .status-dot.on  { background: var(--green); box-shadow: 0 0 6px var(--green); }
+        .status-dot.off { background: var(--muted); }
 
-        .info-label {
-            font-size: 0.78rem;
-            color: #555;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+        .totp-badge {
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: .5px;
+            padding: 4px 12px;
+            border-radius: 6px;
         }
+        .totp-badge.on  { background: rgba(212,168,67,.08); border: 1px solid rgba(212,168,67,.2); color: var(--green); }
+        .totp-badge.off { background: rgba(85,85,106,.1);   border: 1px solid var(--border);      color: var(--muted); }
 
-        .info-value {
-            font-size: 0.875rem;
-            font-weight: 600;
-        }
-
-        /* LINKS NAV */
-        .quick-links {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 12px;
-        }
-
-        .quick-link {
-            background: #111120;
-            border: 1px solid #1a1a2e;
+        /* QR setup */
+        .qr-instructions {
+            background: rgba(245,158,11,.06);
+            border: 1px solid rgba(245,158,11,.18);
             border-radius: 12px;
-            padding: 16px;
-            text-decoration: none;
-            color: #fff;
+            padding: 14px 16px;
+            margin-bottom: 20px;
+            font-size: 0.78rem;
+            color: #c8a24a;
+            line-height: 1.8;
+        }
+        .qr-instructions strong { color: var(--text); }
+        .qr-wrapper {
+            background: #fff;
+            border-radius: 14px;
+            padding: 14px;
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+        .code-input {
+            background: var(--raised);
+            border: 2px solid rgba(212,168,67,.2);
+            color: var(--green);
+            border-radius: 12px;
+            padding: 12px 20px;
+            font-size: 1.8rem;
+            font-weight: 800;
+            text-align: center;
+            letter-spacing: 12px;
+            width: 220px;
+            font-family: 'Space Grotesk', monospace;
+            outline: none;
+            transition: border-color .15s;
+        }
+        .code-input:focus { border-color: var(--green); }
+        .btn-danger-sm {
+            background: rgba(239,68,68,.07);
+            border: 1px solid rgba(239,68,68,.2);
+            color: #f87171;
+            border-radius: 8px;
+            padding: 8px 16px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all .18s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn-danger-sm:hover { background: rgba(239,68,68,.14); }
+        .btn-ghost {
+            background: none;
+            border: none;
+            color: var(--muted);
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: color .15s;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .btn-ghost:hover { color: var(--sub); }
+
+        /* no-2fa promo */
+        .totp-promo {
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+            padding: 4px 0 20px;
+        }
+        .totp-promo-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            background: var(--green-dim);
+            border: 1px solid rgba(212,168,67,.15);
             display: flex;
             align-items: center;
-            gap: 12px;
-            transition: all 0.2s;
+            justify-content: center;
+            color: var(--green);
+            font-size: 1.1rem;
+            flex-shrink: 0;
         }
-
-        .quick-link:hover {
-            border-color: rgba(0, 255, 136, 0.3);
-            color: #00ff88;
-            background: rgba(0, 255, 136, 0.03);
+        .totp-promo-text { font-size: 0.82rem; color: var(--sub); line-height: 1.7; }
+        .totp-promo-text strong { color: var(--text); }
+        .store-links { display: flex; gap: 8px; margin: 14px 0 20px; flex-wrap: wrap; }
+        .store-link {
+            background: var(--raised);
+            border: 1px solid var(--border);
+            color: var(--sub);
+            border-radius: 8px;
+            padding: 7px 14px;
+            font-size: 0.75rem;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all .18s;
         }
+        .store-link:hover { border-color: rgba(212,168,67,.2); color: var(--text); }
 
-        .quick-link i {
-            font-size: 1.2rem;
-            color: #00ff88;
+        /* ── SIDEBAR ── */
+        .quick-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
         }
-
-        .quick-link .q-title {
-            font-size: 0.875rem;
-            font-weight: 600;
+        .quick-item {
+            background: var(--raised);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 14px;
+            text-decoration: none;
+            color: var(--text);
+            transition: all .18s;
         }
-
-        .quick-link .q-sub {
-            font-size: 0.72rem;
-            color: #555;
+        .quick-item:hover {
+            border-color: rgba(212,168,67,.22);
+            background: rgba(212,168,67,.03);
+            color: var(--text);
         }
+        .quick-item-label { font-size: 0.8rem; font-weight: 600; margin-bottom: 2px; }
+        .quick-item-sub   { font-size: 0.7rem; color: var(--muted); }
+        .quick-item-icon  { font-size: 1.1rem; color: var(--green); margin-bottom: 8px; }
 
-        @media(max-width:768px) {
-            .stats-row {
-                grid-template-columns: 1fr;
-            }
+        /* ── RANK CARD ── */
+        .rank-card { text-align: center; padding: 8px 0 4px; }
 
-            .quick-links {
-                grid-template-columns: 1fr;
-            }
+        .rank-hex {
+            width: 60px;
+            height: 60px;
+            clip-path: polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 14px;
+            font-size: 0.6rem;
+            font-weight: 900;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: #000;
+        }
+        .rank-hex.rookie  { background: linear-gradient(135deg,#3a3a5c,#5a5a7a); color: #aaa; }
+        .rank-hex.bronze  { background: linear-gradient(135deg,#cd7f32,#e8a060); }
+        .rank-hex.silver  { background: linear-gradient(135deg,#94a3c8,#d1d8f0); }
+        .rank-hex.gold    { background: linear-gradient(135deg,#f5a623,#fcd34d); }
+
+        .rank-name {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.05rem;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+        .rank-name.rookie { color: var(--sub); }
+        .rank-name.bronze { color: #cd7f32; }
+        .rank-name.silver { color: var(--silver); }
+        .rank-name.gold   { color: var(--gold); }
+
+        .rank-sub { font-size: 0.72rem; color: var(--muted); margin-bottom: 14px; }
+
+        .rank-progress-wrap {
+            height: 5px;
+            background: var(--raised);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 6px;
+        }
+        .rank-progress-bar {
+            height: 100%;
+            border-radius: 10px;
+            transition: width 1.2s ease;
+        }
+        .rank-progress-bar.bronze { background: linear-gradient(90deg, #cd7f32, #e8a060); }
+        .rank-progress-bar.silver { background: linear-gradient(90deg, #94a3c8, #cbd5e1); }
+        .rank-progress-bar.gold   { background: linear-gradient(90deg, #f5a623, #fcd34d); }
+        .rank-progress-bar.rookie { background: linear-gradient(90deg, #3a3a5c, #5a5a7a); }
+
+        .rank-progress-label { font-size: 0.68rem; color: var(--muted); }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 768px) {
+            .stats-strip { grid-template-columns: 1fr; }
+            .stats-strip .stat-cell { border-right: none; border-bottom: 1px solid var(--border); }
+            .stats-strip .stat-cell:last-child { border-bottom: none; }
+            .quick-grid { grid-template-columns: 1fr; }
+            .profile-header-top { padding: 20px; }
+            .profile-since { display: none; }
         }
     </style>
 </head>
-
 <body>
 
-    <nav class="navbar">
-        <div class="container">
-            <div class="d-flex justify-content-between align-items-center">
-                <a href="#" class="nav-brand">Gamer<span>Zone</span></a>
-                <div class="d-flex align-items-center gap-2">
-                    <a href="productos.php" class="nav-icon-btn"><i class="bi bi-grid"></i></a>
-                    <a href="favoritos.php" class="nav-icon-btn"><i class="bi bi-heart"></i></a>
-                    <a href="carrito.php" class="nav-icon-btn">
-                        <i class="bi bi-cart3"></i>
-                        <?php if ($cant_carrito > 0): ?>
-                            <span class="nav-badge"><?= $cant_carrito ?></span>
-                        <?php endif; ?>
-                    </a>
-                    <a href="historial.php" class="nav-icon-btn"><i class="bi bi-bag-check"></i></a>
-                    <form action="../../controllers/auth_controller.php" method="POST">
-                        <input type="hidden" name="action" value="logout">
-                        <button class="btn-logout-sm"><i class="bi bi-box-arrow-right me-1"></i>Salir</button>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </nav>
-
-    <div class="content">
-        <div class="container">
-
-            <?php if (isset($_SESSION['success'])): ?>
-                <div class="alert-ok"><i class="bi bi-check-circle-fill"></i><?= $_SESSION['success'];
-                unset($_SESSION['success']); ?></div>
-            <?php endif; ?>
-            <?php if (isset($_SESSION['error'])): ?>
-                <div class="alert-err"><i class="bi bi-exclamation-circle-fill"></i><?= $_SESSION['error'];
-                unset($_SESSION['error']); ?>
-                </div>
-            <?php endif; ?>
-
-            <!-- HEADER PERFIL -->
-            <div class="profile-header">
-                <div class="avatar-big"><?= strtoupper(substr($user['nombre'], 0, 1)) ?></div>
-                <div class="profile-info">
-                    <h2><?= htmlspecialchars($user['nombre']) ?></h2>
-                    <p><?= htmlspecialchars($user['correo']) ?></p>
-                    <div class="profile-badge">
-                        <i class="bi bi-controller"></i>
-                        Cliente GamerZone desde <?= date('Y', strtotime($user['fecha_registro'])) ?>
-                    </div>
-                </div>
-                <div class="ms-auto d-none d-md-block" style="text-align:right;">
-                    <div style="font-size:0.72rem;color:#555;margin-bottom:4px;">Miembro desde</div>
-                    <div style="font-weight:700;"><?= date('d/m/Y', strtotime($user['fecha_registro'])) ?></div>
-                </div>
-            </div>
-
-            <!-- STATS -->
-            <div class="stats-row">
-                <div class="stat-card">
-                    <div class="stat-icon">🛒</div>
-                    <div class="stat-num"><?= $total_compras ?></div>
-                    <div class="stat-label">Compras realizadas</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon">💰</div>
-                    <div class="stat-num" style="font-size:1.3rem;">Bs.<?= number_format($total_gastado, 0) ?></div>
-                    <div class="stat-label">Total invertido</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon">❤️</div>
-                    <div class="stat-num"><?= $total_favs ?></div>
-                    <div class="stat-label">Favoritos guardados</div>
-                </div>
-            </div>
-
-            <div class="row g-4">
-                <div class="col-lg-8">
-                    <!-- TABS -->
-                    <div class="tab-nav">
-                        <button class="tab-btn active" onclick="showTab('perfil', this)"><i
-                                class="bi bi-person me-1"></i>Mi Perfil</button>
-                        <button class="tab-btn" onclick="showTab('seguridad', this)"><i
-                                class="bi bi-shield-lock me-1"></i>Seguridad</button>
-                        <button class="tab-btn" onclick="showTab('info', this)"><i
-                                class="bi bi-info-circle me-1"></i>Información</button>
-                    </div>
-
-                    <!-- TAB: PERFIL -->
-                    <div id="tab-perfil" class="tab-pane active">
-                        <div class="form-card">
-                            <div class="form-card-title"><i class="bi bi-person-circle me-2"
-                                    style="color:#00ff88"></i>Datos personales</div>
-                            <form method="POST">
-                                <input type="hidden" name="actualizar_perfil" value="1">
-                                <div class="mb-4">
-                                    <label class="form-label">Nombre completo</label>
-                                    <input type="text" name="nombre" class="form-input"
-                                        value="<?= htmlspecialchars($user['nombre']) ?>"
-                                        pattern="[a-zA-ZáéíóúÁÉÍÓÚüÜñÑ\s]{2,50}"
-                                        title="Solo letras y espacios, entre 2 y 50 caracteres" required>
-                                </div>
-                                <div class="mb-4">
-                                    <label class="form-label">Correo electrónico</label>
-                                    <input type="email" name="correo" class="form-input"
-                                        value="<?= htmlspecialchars($user['correo']) ?>"
-                                        pattern="[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}"
-                                        title="Ingresa un correo válido" required>
-                                </div>
-                                <button type="submit" class="btn-save"><i class="bi bi-check-lg"></i>Guardar
-                                    cambios</button>
-                            </form>
-                        </div>
-                    </div>
-
-                    <!-- TAB: SEGURIDAD -->
-                    <div id="tab-seguridad" class="tab-pane">
-                        <div class="form-card">
-                            <div class="form-card-title"><i class="bi bi-shield-lock me-2"
-                                    style="color:#00ff88"></i>Cambiar contraseña</div>
-                            <form method="POST">
-                                <input type="hidden" name="cambiar_pass" value="1">
-                                <div class="mb-3">
-                                    <label class="form-label">Contraseña actual</label>
-                                    <div class="input-wrap">
-                                        <input type="password" name="pass_actual" id="passActual" class="form-input"
-                                            placeholder="Tu contraseña actual" required>
-                                        <button type="button" class="toggle-pass"
-                                            onclick="togglePass('passActual',this)"><i class="bi bi-eye"></i></button>
-                                    </div>
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label">Nueva contraseña</label>
-                                    <div class="input-wrap">
-                                        <input type="password" name="pass_nueva" id="passNueva" class="form-input"
-                                            placeholder="Mínimo 6 caracteres" pattern="(?=.*[0-9])(?=.*[a-zA-Z]).{6,}"
-                                            title="Mínimo 6 caracteres, debe incluir letras y números" required
-                                            minlength="6">
-                                        <button type="button" class="toggle-pass"
-                                            onclick="togglePass('passNueva',this)"><i class="bi bi-eye"></i></button>
-                                    </div>
-                                </div>
-                                <div class="mb-4">
-                                    <label class="form-label">Confirmar nueva contraseña</label>
-                                    <div class="input-wrap">
-                                        <input type="password" name="pass_confirm" id="passConfirm" class="form-input"
-                                            placeholder="Repite la nueva contraseña" required>
-                                        <button type="button" class="toggle-pass"
-                                            onclick="togglePass('passConfirm',this)"><i class="bi bi-eye"></i></button>
-                                    </div>
-                                </div>
-                                <button type="submit" class="btn-save"><i class="bi bi-lock"></i>Cambiar
-                                    contraseña</button>
-                            </form>
-                        </div>
-                        <div class="form-card mt-4">
-                            <div class="form-card-title"><i class="bi bi-phone me-2"
-                                    style="color:#00ff88"></i>Autenticación 2FA con QR</div>
-                            <?php
-                            // Recargar datos frescos del usuario para TOTP
-                            $stmt_fresh = $conn->prepare("SELECT totp_secret, totp_activo FROM usuario WHERE id_usuario=?");
-                            $stmt_fresh->bind_param("i", $id_usuario);
-                            $stmt_fresh->execute();
-                            $totp_data = $stmt_fresh->get_result()->fetch_assoc();
-                            $totp_activo = $totp_data['totp_activo'];
-                            $totp_secret = $totp_data['totp_secret'];
-                            ?>
-
-                            <?php if ($totp_activo): ?>
-                                <!-- TOTP ACTIVO -->
-                                <div
-                                    style="display:flex;justify-content:space-between;align-items:center;padding:14px 0;border-bottom:1px solid #111;">
-                                    <div>
-                                        <div
-                                            style="font-size:0.78rem;color:#555;text-transform:uppercase;letter-spacing:0.5px;">
-                                            Estado</div>
-                                        <div style="color:#00ff88;font-weight:700;margin-top:4px;font-size:0.875rem;">
-                                            <i class="bi bi-shield-check me-1"></i>Google Authenticator Activo
-                                        </div>
-                                    </div>
-                                    <span
-                                        style="background:rgba(0,255,136,0.08);border:1px solid rgba(0,255,136,0.2);color:#00ff88;border-radius:8px;padding:4px 12px;font-size:0.78rem;font-weight:600;">✅
-                                        Protegido</span>
-                                </div>
-                                <p style="color:#555;font-size:0.82rem;margin-top:12px;line-height:1.6;margin-bottom:16px;">
-                                    Cada vez que inicies sesión deberás ingresar el código de la app Google Authenticator.
-                                </p>
-                                <form method="POST">
-                                    <button type="submit" name="desactivar_totp"
-                                        style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);color:#ef4444;border-radius:8px;padding:8px 16px;font-size:0.82rem;cursor:pointer;transition:all 0.2s;">
-                                        <i class="bi bi-x-circle me-1"></i>Desactivar Google Authenticator
-                                    </button>
-                                </form>
-
-                            <?php elseif ($totp_secret): ?>
-                                <!-- ESCANEAR QR -->
-                                <div style="text-align:center;padding:16px 0;">
-                                    <div
-                                        style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);border-radius:12px;padding:12px 16px;margin-bottom:20px;text-align:left;">
-                                        <div style="font-size:0.82rem;color:#f59e0b;font-weight:600;margin-bottom:6px;"><i
-                                                class="bi bi-info-circle me-1"></i>Instrucciones</div>
-                                        <div style="font-size:0.78rem;color:#888;line-height:1.7;">
-                                            1. Descarga <strong style="color:#fff">Google Authenticator</strong> en tu
-                                            celular<br>
-                                            2. Abre la app y toca <strong style="color:#fff">"+"</strong> → <strong
-                                                style="color:#fff">"Escanear código QR"</strong><br>
-                                            3. Escanea el código de abajo<br>
-                                            4. Ingresa el código de 6 dígitos que aparece en la app
-                                        </div>
-                                    </div>
-                                    <?php try {
-                                        $qr = getQRCodeUrl($user['correo'], $totp_secret);
-                                        echo "<div style='background:#fff;border-radius:12px;padding:12px;display:inline-block;margin-bottom:16px;'>";
-                                        echo "<img src='$qr' style='width:180px;height:180px;display:block;'>";
-                                        echo "</div>";
-                                    } catch (Exception $e) {
-                                        echo "<div style='color:#ef4444;font-size:0.82rem;margin-bottom:16px;'>Error generando QR: {$e->getMessage()}</div>";
-                                    } ?>
-                                    <form method="POST">
-                                        <div style="margin-bottom:12px;">
-                                            <input type="text" name="totp_codigo" placeholder="000000"
-                                                style="background:#111120;border:2px solid rgba(0,255,136,0.2);color:#00ff88;border-radius:12px;padding:12px 20px;font-size:1.6rem;font-weight:800;text-align:center;letter-spacing:10px;width:200px;outline:none;font-family:'Inter',sans-serif;"
-                                                maxlength="6" pattern="[0-9]{6}" inputmode="numeric" required autofocus>
-                                        </div>
-                                        <button type="submit" name="confirmar_totp" class="btn-save"
-                                            style="margin-bottom:12px;">
-                                            <i class="bi bi-check-lg"></i> Confirmar y Activar
-                                        </button>
-                                    </form>
-                                    <form method="POST">
-                                        <button type="submit" name="activar_totp"
-                                            style="background:transparent;border:none;color:#555;font-size:0.78rem;cursor:pointer;">
-                                            <i class="bi bi-arrow-repeat me-1"></i>Generar nuevo QR
-                                        </button>
-                                    </form>
-                                </div>
-
-                            <?php else: ?>
-                                <!-- SIN TOTP -->
-                                <div style="text-align:center;padding:20px 0;">
-                                    <div style="font-size:3rem;margin-bottom:12px;">📱</div>
-                                    <p style="color:#555;font-size:0.875rem;margin-bottom:20px;line-height:1.7;">
-                                        Aumenta la seguridad de tu cuenta activando<br>
-                                        <strong style="color:#fff">Google Authenticator</strong> — genera códigos sin
-                                        internet.
-                                    </p>
-                                    <div
-                                        style="display:flex;gap:10px;justify-content:center;margin-bottom:20px;flex-wrap:wrap;">
-                                        <a href="https://play.google.com/store/apps/details?id=com.google.android.apps.authenticator2"
-                                            target="_blank"
-                                            style="background:#0d0d1a;border:1px solid #1a1a2e;color:#aaa;border-radius:8px;padding:8px 14px;font-size:0.78rem;text-decoration:none;display:flex;align-items:center;gap:6px;transition:all 0.2s;">
-                                            <i class="bi bi-google-play"></i> Google Play
-                                        </a>
-                                        <a href="https://apps.apple.com/app/google-authenticator/id388497605"
-                                            target="_blank"
-                                            style="background:#0d0d1a;border:1px solid #1a1a2e;color:#aaa;border-radius:8px;padding:8px 14px;font-size:0.78rem;text-decoration:none;display:flex;align-items:center;gap:6px;transition:all 0.2s;">
-                                            <i class="bi bi-apple"></i> App Store
-                                        </a>
-                                    </div>
-                                    <form method="POST">
-                                        <button type="submit" name="activar_totp" class="btn-save">
-                                            <i class="bi bi-qr-code-scan me-1"></i> Configurar Google Authenticator
-                                        </button>
-                                    </form>
-                                </div>
-                            <?php endif; ?>
-                        </div>
-                    </div>
-
-                    <!-- TAB: INFO -->
-                    <div id="tab-info" class="tab-pane">
-                        <div class="form-card">
-                            <div class="form-card-title"><i class="bi bi-info-circle me-2"
-                                    style="color:#00ff88"></i>Información de la cuenta</div>
-                            <div class="info-row">
-                                <span class="info-label">ID de usuario</span>
-                                <span class="info-value" style="color:#555;">#<?= $user['id_usuario'] ?></span>
-                            </div>
-                            <div class="info-row">
-                                <span class="info-label">Nombre</span>
-                                <span class="info-value"><?= htmlspecialchars($user['nombre']) ?></span>
-                            </div>
-                            <div class="info-row">
-                                <span class="info-label">Correo</span>
-                                <span class="info-value"><?= htmlspecialchars($user['correo']) ?></span>
-                            </div>
-                            <div class="info-row">
-                                <span class="info-label">Rol</span>
-                                <span class="info-value"><span
-                                        style="background:rgba(0,255,136,0.08);color:#00ff88;border-radius:6px;padding:2px 10px;font-size:0.78rem;">Cliente</span></span>
-                            </div>
-                            <div class="info-row">
-                                <span class="info-label">Fecha de registro</span>
-                                <span
-                                    class="info-value"><?= date('d \d\e F, Y', strtotime($user['fecha_registro'])) ?></span>
-                            </div>
-                            <div class="info-row">
-                                <span class="info-label">Autenticación 2FA</span>
-                                <span class="info-value" style="color:#00ff88;"><i
-                                        class="bi bi-shield-check me-1"></i>Activa</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- SIDEBAR -->
-                <div class="col-lg-4">
-                    <div class="form-card mb-4">
-                        <div class="form-card-title"><i class="bi bi-grid me-2" style="color:#00ff88"></i>Accesos
-                            rápidos</div>
-                        <div class="quick-links">
-                            <a href="productos.php" class="quick-link">
-                                <i class="bi bi-grid"></i>
-                                <div>
-                                    <div class="q-title">Tienda</div>
-                                    <div class="q-sub">Ver productos</div>
-                                </div>
-                            </a>
-                            <a href="carrito.php" class="quick-link">
-                                <i class="bi bi-cart3"></i>
-                                <div>
-                                    <div class="q-title">Carrito</div>
-                                    <div class="q-sub"><?= $cant_carrito ?> items</div>
-                                </div>
-                            </a>
-                            <a href="favoritos.php" class="quick-link">
-                                <i class="bi bi-heart"></i>
-                                <div>
-                                    <div class="q-title">Favoritos</div>
-                                    <div class="q-sub"><?= $total_favs ?> guardados</div>
-                                </div>
-                            </a>
-                            <a href="historial.php" class="quick-link">
-                                <i class="bi bi-bag-check"></i>
-                                <div>
-                                    <div class="q-title">Pedidos</div>
-                                    <div class="q-sub"><?= $total_compras ?> realizados</div>
-                                </div>
-                            </a>
-                        </div>
-                    </div>
-
-                    <div class="form-card">
-                        <div class="form-card-title"><i class="bi bi-trophy me-2" style="color:#f59e0b"></i>Nivel de
-                            cliente</div>
-                        <div style="text-align:center;padding:16px 0;">
-                            <div style="font-size:3rem;margin-bottom:12px;">
-                                <?= $total_compras >= 10 ? '🏆' : ($total_compras >= 5 ? '🥈' : ($total_compras >= 1 ? '🥉' : '🎮')) ?>
-                            </div>
-                            <div style="font-size:1.1rem;font-weight:800;color:#f59e0b;margin-bottom:4px;">
-                                <?= $total_compras >= 10 ? 'Gold Gamer' : ($total_compras >= 5 ? 'Silver Gamer' : ($total_compras >= 1 ? 'Bronze Gamer' : 'New Gamer')) ?>
-                            </div>
-                            <div style="font-size:0.78rem;color:#555;"><?= $total_compras ?>
-                                compra<?= $total_compras != 1 ? 's' : '' ?> realizadas</div>
-                            <?php if ($total_compras < 10): ?>
-                                <div
-                                    style="margin-top:12px;background:#111120;border-radius:8px;height:6px;overflow:hidden;">
-                                    <div
-                                        style="height:100%;background:linear-gradient(90deg,#f59e0b,#ef4444);border-radius:8px;width:<?= min(100, ($total_compras / 10) * 100) ?>%;transition:width 1s;">
-                                    </div>
-                                </div>
-                                <div style="font-size:0.72rem;color:#444;margin-top:6px;"><?= max(0, 10 - $total_compras) ?>
-                                    compras para Gold</div>
-                            <?php endif; ?>
-                        </div>
-                    </div>
-                </div>
+<!-- NAVBAR -->
+<nav class="navbar">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center">
+            <a href="#" class="nav-brand">Gamer<span>Zone</span></a>
+            <div class="nav-actions">
+                <a href="productos.php" class="nav-btn" title="Tienda"><i class="bi bi-grid-fill"></i></a>
+                <a href="favoritos.php" class="nav-btn" title="Favoritos"><i class="bi bi-heart"></i></a>
+                <a href="carrito.php" class="nav-btn" title="Carrito">
+                    <i class="bi bi-cart3"></i>
+                    <?php if ($cant_carrito > 0): ?>
+                        <span class="nav-badge"><?= $cant_carrito ?></span>
+                    <?php endif; ?>
+                </a>
+                <a href="historial.php" class="nav-btn" title="Pedidos"><i class="bi bi-bag-check"></i></a>
+                <form action="../../controllers/auth_controller.php" method="POST" style="margin-left:8px;">
+                    <input type="hidden" name="action" value="logout">
+                    <button class="btn-exit"><i class="bi bi-box-arrow-right"></i>Salir</button>
+                </form>
             </div>
         </div>
     </div>
+</nav>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        function showTab(name, btn) {
-            document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById('tab-' + name).classList.add('active');
-            btn.classList.add('active');
+<!-- CONTENT -->
+<div class="page-body">
+    <div class="container">
+
+        <?php if (isset($_SESSION['success'])): ?>
+            <div class="alert-ok"><i class="bi bi-check-circle-fill"></i><?= $_SESSION['success']; unset($_SESSION['success']); ?></div>
+        <?php endif; ?>
+        <?php if (isset($_SESSION['error'])): ?>
+            <div class="alert-err"><i class="bi bi-exclamation-circle-fill"></i><?= $_SESSION['error']; unset($_SESSION['error']); ?></div>
+        <?php endif; ?>
+
+        <!-- PROFILE HEADER -->
+        <div class="profile-header">
+            <div class="profile-header-top">
+                <div class="avatar"><?= strtoupper(substr($user['nombre'], 0, 1)) ?></div>
+                <div class="profile-meta">
+                    <div class="profile-name"><?= htmlspecialchars($user['nombre']) ?></div>
+                    <div class="profile-email"><?= htmlspecialchars($user['correo']) ?></div>
+                    <div class="profile-tag"><i class="bi bi-controller"></i> Cliente desde <?= date('Y', strtotime($user['fecha_registro'])) ?></div>
+                </div>
+                <div class="profile-since d-none d-md-block">
+                    <div class="profile-since-label">Miembro desde</div>
+                    <div class="profile-since-date"><?= date('d/m/Y', strtotime($user['fecha_registro'])) ?></div>
+                </div>
+            </div>
+            <div class="stats-strip">
+                <div class="stat-cell">
+                    <div class="stat-val"><?= $total_compras ?></div>
+                    <div class="stat-lbl">Compras</div>
+                </div>
+                <div class="stat-cell">
+                    <div class="stat-val accent" style="font-size:1.15rem;">Bs.<?= number_format($total_gastado, 0, '.', ',') ?></div>
+                    <div class="stat-lbl">Total gastado</div>
+                </div>
+                <div class="stat-cell">
+                    <div class="stat-val"><?= $total_favs ?></div>
+                    <div class="stat-lbl">Favoritos</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <!-- MAIN -->
+            <div class="col-lg-8">
+
+                <!-- TABS -->
+                <div class="tab-row">
+                    <button class="tab-btn active" onclick="showTab('perfil',this)"><i class="bi bi-person me-1"></i>Mi Perfil</button>
+                    <button class="tab-btn" onclick="showTab('seguridad',this)"><i class="bi bi-shield-lock me-1"></i>Seguridad</button>
+                    <button class="tab-btn" onclick="showTab('info',this)"><i class="bi bi-info-circle me-1"></i>Información</button>
+                </div>
+
+                <!-- TAB: PERFIL -->
+                <div id="tab-perfil" class="tab-pane active">
+                    <div class="card">
+                        <div class="card-title"><i class="bi bi-person-circle"></i> Datos personales</div>
+                        <form method="POST">
+                            <input type="hidden" name="actualizar_perfil" value="1">
+                            <div class="mb-4">
+                                <label class="f-label">Nombre completo</label>
+                                <input type="text" name="nombre" class="f-input"
+                                    value="<?= htmlspecialchars($user['nombre']) ?>"
+                                    pattern="[a-zA-ZáéíóúÁÉÍÓÚüÜñÑ\s]{2,50}"
+                                    title="Solo letras y espacios, entre 2 y 50 caracteres" required>
+                            </div>
+                            <div class="mb-4">
+                                <label class="f-label">Correo electrónico</label>
+                                <input type="email" name="correo" class="f-input"
+                                    value="<?= htmlspecialchars($user['correo']) ?>"
+                                    required>
+                            </div>
+                            <button type="submit" class="btn-primary"><i class="bi bi-check-lg"></i>Guardar cambios</button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- TAB: SEGURIDAD -->
+                <div id="tab-seguridad" class="tab-pane">
+                    <!-- Cambiar contraseña -->
+                    <div class="card">
+                        <div class="card-title"><i class="bi bi-lock"></i> Cambiar contraseña</div>
+                        <form method="POST">
+                            <input type="hidden" name="cambiar_pass" value="1">
+                            <div class="mb-3">
+                                <label class="f-label">Contraseña actual</label>
+                                <div class="input-wrap">
+                                    <input type="password" name="pass_actual" id="pa" class="f-input" placeholder="••••••••" required>
+                                    <button type="button" class="toggle-pass" onclick="tp('pa',this)"><i class="bi bi-eye"></i></button>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="f-label">Nueva contraseña</label>
+                                <div class="input-wrap">
+                                    <input type="password" name="pass_nueva" id="pn" class="f-input"
+                                        placeholder="Mínimo 6 caracteres"
+                                        pattern="(?=.*[0-9])(?=.*[a-zA-Z]).{6,}"
+                                        title="Mínimo 6 caracteres, letras y números" required minlength="6">
+                                    <button type="button" class="toggle-pass" onclick="tp('pn',this)"><i class="bi bi-eye"></i></button>
+                                </div>
+                            </div>
+                            <div class="mb-4">
+                                <label class="f-label">Confirmar nueva contraseña</label>
+                                <div class="input-wrap">
+                                    <input type="password" name="pass_confirm" id="pc" class="f-input" placeholder="Repite la contraseña" required>
+                                    <button type="button" class="toggle-pass" onclick="tp('pc',this)"><i class="bi bi-eye"></i></button>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn-primary"><i class="bi bi-lock-fill"></i>Actualizar contraseña</button>
+                        </form>
+                    </div>
+
+                    <!-- 2FA -->
+                    <div class="card">
+                        <div class="card-title"><i class="bi bi-shield-check"></i> Autenticación de dos factores</div>
+
+                        <?php
+                        $sf = $conn->prepare("SELECT totp_secret, totp_activo FROM usuario WHERE id_usuario=?");
+                        $sf->bind_param("i", $id_usuario);
+                        $sf->execute();
+                        $td = $sf->get_result()->fetch_assoc();
+                        $totp_activo = $td['totp_activo'];
+                        $totp_secret = $td['totp_secret'];
+                        ?>
+
+                        <?php if ($totp_activo): ?>
+                            <div class="totp-status">
+                                <div>
+                                    <div style="font-size:0.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;">Estado</div>
+                                    <div style="font-size:0.875rem;font-weight:600;color:var(--green);display:flex;align-items:center;">
+                                        <span class="status-dot on"></span>Google Authenticator activo
+                                    </div>
+                                </div>
+                                <span class="totp-badge on">Protegido</span>
+                            </div>
+                            <p style="color:var(--sub);font-size:0.8rem;line-height:1.7;margin-bottom:20px;">
+                                Tu cuenta requiere el código de Google Authenticator al iniciar sesión.
+                            </p>
+                            <form method="POST">
+                                <button type="submit" name="desactivar_totp" class="btn-danger-sm">
+                                    <i class="bi bi-x-circle"></i>Desactivar 2FA
+                                </button>
+                            </form>
+
+                        <?php elseif ($totp_secret): ?>
+                            <div class="totp-status">
+                                <div>
+                                    <div style="font-size:0.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;">Estado</div>
+                                    <div style="font-size:0.875rem;font-weight:600;color:#f59e0b;display:flex;align-items:center;">
+                                        <span class="status-dot" style="background:#f59e0b;margin-right:8px;"></span>Pendiente de confirmar
+                                    </div>
+                                </div>
+                                <span class="totp-badge" style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);color:#f59e0b;">Escanea el QR</span>
+                            </div>
+                            <div class="qr-instructions">
+                                1. Abre <strong>Google Authenticator</strong> en tu celular<br>
+                                2. Toca <strong>"+"</strong> → <strong>"Escanear código QR"</strong><br>
+                                3. Escanea el código de abajo y escribe el código de 6 dígitos
+                            </div>
+                            <div style="text-align:center;">
+                                <?php try {
+                                    $qr = getQRCodeUrl($user['correo'], $totp_secret);
+                                    echo "<div class='qr-wrapper'><img src='$qr' style='width:176px;height:176px;display:block;'></div><br>";
+                                } catch (Exception $e) {
+                                    echo "<p style='color:var(--red);font-size:0.8rem;margin-bottom:16px;'>Error generando QR: ".htmlspecialchars($e->getMessage())."</p>";
+                                } ?>
+                                <form method="POST" style="margin-bottom:10px;">
+                                    <div style="margin-bottom:14px;">
+                                        <input type="text" name="totp_codigo" class="code-input"
+                                            placeholder="000000" maxlength="6" pattern="[0-9]{6}"
+                                            inputmode="numeric" required autofocus>
+                                    </div>
+                                    <button type="submit" name="confirmar_totp" class="btn-primary">
+                                        <i class="bi bi-check-lg"></i>Confirmar y activar
+                                    </button>
+                                </form>
+                                <form method="POST">
+                                    <button type="submit" name="activar_totp" class="btn-ghost">
+                                        <i class="bi bi-arrow-repeat"></i>Generar nuevo QR
+                                    </button>
+                                </form>
+                            </div>
+
+                        <?php else: ?>
+                            <div class="totp-promo">
+                                <div class="totp-promo-icon"><i class="bi bi-shield-lock-fill"></i></div>
+                                <div class="totp-promo-text">
+                                    Protege tu cuenta con <strong>Google Authenticator</strong>. Genera códigos de un solo uso sin necesitar internet, añadiendo una capa extra de seguridad al inicio de sesión.
+                                </div>
+                            </div>
+                            <div class="store-links">
+                                <a href="https://play.google.com/store/apps/details?id=com.google.android.apps.authenticator2" target="_blank" class="store-link">
+                                    <i class="bi bi-google-play"></i> Google Play
+                                </a>
+                                <a href="https://apps.apple.com/app/google-authenticator/id388497605" target="_blank" class="store-link">
+                                    <i class="bi bi-apple"></i> App Store
+                                </a>
+                            </div>
+                            <form method="POST">
+                                <button type="submit" name="activar_totp" class="btn-primary">
+                                    <i class="bi bi-qr-code-scan"></i>Configurar Google Authenticator
+                                </button>
+                            </form>
+                        <?php endif; ?>
+                    </div>
+                </div>
+
+                <!-- TAB: INFO -->
+                <div id="tab-info" class="tab-pane">
+                    <div class="card">
+                        <div class="card-title"><i class="bi bi-info-circle"></i> Información de la cuenta</div>
+                        <div class="info-row">
+                            <span class="info-row-label">ID de usuario</span>
+                            <span class="info-row-val" style="color:var(--muted);font-family:monospace;">#<?= $user['id_usuario'] ?></span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-row-label">Nombre</span>
+                            <span class="info-row-val"><?= htmlspecialchars($user['nombre']) ?></span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-row-label">Correo</span>
+                            <span class="info-row-val"><?= htmlspecialchars($user['correo']) ?></span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-row-label">Rol</span>
+                            <span class="info-row-val">
+                                <span style="background:var(--green-dim);border:1px solid rgba(212,168,67,.18);color:var(--green);border-radius:6px;padding:2px 10px;font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.4px;">Cliente</span>
+                            </span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-row-label">Miembro desde</span>
+                            <span class="info-row-val"><?= date('d \d\e F \d\e Y', strtotime($user['fecha_registro'])) ?></span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-row-label">Autenticación 2FA</span>
+                            <span class="info-row-val">
+                                <?php if ($totp_activo ?? false): ?>
+                                    <span style="color:var(--green);display:flex;align-items:center;gap:6px;"><span class="status-dot on"></span>Activa (Google Auth)</span>
+                                <?php else: ?>
+                                    <span style="color:var(--muted);display:flex;align-items:center;gap:6px;"><span class="status-dot off"></span>No configurada</span>
+                                <?php endif; ?>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SIDEBAR -->
+            <div class="col-lg-4">
+                <!-- Accesos rápidos -->
+                <div class="card mb-4">
+                    <div class="card-title"><i class="bi bi-grid"></i> Accesos rápidos</div>
+                    <div class="quick-grid">
+                        <a href="productos.php" class="quick-item">
+                            <div class="quick-item-icon"><i class="bi bi-grid-fill"></i></div>
+                            <div class="quick-item-label">Tienda</div>
+                            <div class="quick-item-sub">Ver productos</div>
+                        </a>
+                        <a href="carrito.php" class="quick-item">
+                            <div class="quick-item-icon"><i class="bi bi-cart3"></i></div>
+                            <div class="quick-item-label">Carrito</div>
+                            <div class="quick-item-sub"><?= $cant_carrito ?> ítem<?= $cant_carrito !== 1 ? 's' : '' ?></div>
+                        </a>
+                        <a href="favoritos.php" class="quick-item">
+                            <div class="quick-item-icon"><i class="bi bi-heart-fill"></i></div>
+                            <div class="quick-item-label">Favoritos</div>
+                            <div class="quick-item-sub"><?= $total_favs ?> guardado<?= $total_favs !== 1 ? 's' : '' ?></div>
+                        </a>
+                        <a href="historial.php" class="quick-item">
+                            <div class="quick-item-icon"><i class="bi bi-bag-check-fill"></i></div>
+                            <div class="quick-item-label">Pedidos</div>
+                            <div class="quick-item-sub"><?= $total_compras ?> realizad<?= $total_compras !== 1 ? 'os' : 'o' ?></div>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Nivel -->
+                <div class="card">
+                    <div class="card-title"><i class="bi bi-bar-chart-fill" style="color:var(--gold);"></i> Nivel de jugador</div>
+                    <div class="rank-card">
+                        <div class="rank-hex <?= $rank_key ?>"><?= strtoupper(substr($rank_key,0,2)) ?></div>
+                        <div class="rank-name <?= $rank_key ?>"><?= $rank_label ?></div>
+                        <div class="rank-sub"><?= $total_compras ?> compra<?= $total_compras !== 1 ? 's' : '' ?> realizadas</div>
+                        <?php if ($total_compras < 10): ?>
+                        <div class="rank-progress-wrap">
+                            <div class="rank-progress-bar <?= $rank_key ?>" style="width:<?= $rank_pct ?>%;"></div>
+                        </div>
+                        <div class="rank-progress-label">
+                            <?php
+                            $next_rank = $total_compras >= 5 ? 'Gold' : ($total_compras >= 1 ? 'Silver' : 'Bronze');
+                            $needed    = $total_compras >= 5 ? (10 - $total_compras) : ($total_compras >= 1 ? (5 - $total_compras) : 1);
+                            echo "$needed compra".($needed !== 1?'s':'')." más para $next_rank";
+                            ?>
+                        </div>
+                        <?php else: ?>
+                        <div class="rank-progress-label" style="color:var(--gold);">Nivel máximo alcanzado</div>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    function showTab(name, btn) {
+        document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById('tab-' + name).classList.add('active');
+        btn.classList.add('active');
+    }
+    function tp(id, btn) {
+        const inp = document.getElementById(id);
+        const ico = btn.querySelector('i');
+        if (inp.type === 'password') {
+            inp.type = 'text';
+            ico.className = 'bi bi-eye-slash';
+            btn.style.color = 'var(--green)';
+        } else {
+            inp.type = 'password';
+            ico.className = 'bi bi-eye';
+            btn.style.color = '';
         }
-        function togglePass(id, btn) {
-            const input = document.getElementById(id);
-            const icon = btn.querySelector('i');
-            if (input.type === 'password') {
-                input.type = 'text';
-                icon.className = 'bi bi-eye-slash';
-                btn.style.color = '#00ff88';
-            } else {
-                input.type = 'password';
-                icon.className = 'bi bi-eye';
-                btn.style.color = '#444';
-            }
-        }
-        // Abrir tab correcto según URL
-        const urlParams = new URLSearchParams(window.location.search);
-        const tabParam = urlParams.get('tab');
-        if (tabParam) {
-            const btn = document.querySelector(`[onclick*="showTab('${tabParam}'"]`);
-            if (btn) showTab(tabParam, btn);
-        }
-    </script>
+    }
+    // Abrir tab según URL
+    const tp_param = new URLSearchParams(window.location.search).get('tab');
+    if (tp_param) {
+        const btn = document.querySelector(`[onclick*="showTab('${tp_param}'"]`);
+        if (btn) showTab(tp_param, btn);
+    }
+</script>
 </body>
-
 </html>
