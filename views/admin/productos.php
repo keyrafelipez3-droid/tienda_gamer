@@ -124,15 +124,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $upd_p = $conn->prepare("UPDATE producto_imagen SET es_principal=1 WHERE id_imagen=? AND id_producto=?");
                 $upd_p->bind_param("ii", $id_img_p, $id);
                 $upd_p->execute();
-                // Actualizar imagen en tabla producto
-                $get_img = $conn->prepare("SELECT imagen FROM producto_imagen WHERE id_imagen=?");
-                $get_img->bind_param("i", $id_img_p);
-                $get_img->execute();
-                $img_p = $get_img->get_result()->fetch_assoc()['imagen'];
-                $upd_prod = $conn->prepare("UPDATE producto SET imagen=? WHERE id_producto=?");
-                $upd_prod->bind_param("si", $img_p, $id);
-                $upd_prod->execute();
             }
+
+            // Si ninguna imagen quedó marcada como principal, promover la primera disponible
+            $chk_p = $conn->prepare("SELECT COUNT(*) as c FROM producto_imagen WHERE id_producto=? AND es_principal=1");
+            $chk_p->bind_param("i", $id);
+            $chk_p->execute();
+            $tiene_p = $chk_p->get_result()->fetch_assoc()['c'];
+            if (!$tiene_p) {
+                $first_img = $conn->prepare("SELECT id_imagen FROM producto_imagen WHERE id_producto=? ORDER BY orden ASC LIMIT 1");
+                $first_img->bind_param("i", $id);
+                $first_img->execute();
+                $frow = $first_img->get_result()->fetch_assoc();
+                if ($frow) {
+                    $set_p = $conn->prepare("UPDATE producto_imagen SET es_principal=1 WHERE id_imagen=?");
+                    $fid = $frow['id_imagen'];
+                    $set_p->bind_param("i", $fid);
+                    $set_p->execute();
+                }
+            }
+
+            // SYNC FINAL: producto.imagen siempre refleja la imagen principal real de producto_imagen
+            $sync_q = $conn->prepare("SELECT imagen FROM producto_imagen WHERE id_producto=? ORDER BY es_principal DESC, orden ASC LIMIT 1");
+            $sync_q->bind_param("i", $id);
+            $sync_q->execute();
+            $sync_row = $sync_q->get_result()->fetch_assoc();
+            $img_actual = $sync_row ? $sync_row['imagen'] : null;
+            $sync_upd = $conn->prepare("UPDATE producto SET imagen=? WHERE id_producto=?");
+            $sync_upd->bind_param("si", $img_actual, $id);
+            $sync_upd->execute();
 
             $_SESSION['success'] = "Producto actualizado correctamente.";
         }
