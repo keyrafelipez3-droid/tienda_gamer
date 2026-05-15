@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 session_start();
 if (!isset($_SESSION['usuario_id']) || !in_array($_SESSION['usuario_rol'], ['admin','super_admin'])) {
     header('Location: ../auth/login.php'); exit;
@@ -35,12 +35,12 @@ $nuevos_usuarios = $conn->query("SELECT * FROM usuario WHERE rol='cliente' ORDER
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: #070711; color: #fff; font-family: 'Inter', sans-serif; min-height: 100vh; }
+        body { background: #080808; color: #fff; font-family: 'Inter', sans-serif; min-height: 100vh; }
 
         /* SIDEBAR */
-        .sidebar { position: fixed; left: 0; top: 0; bottom: 0; width: 260px; background: #0d0d1a; border-right: 1px solid #1a1a2e; padding: 0; z-index: 100; display: flex; flex-direction: column; }
-        .sidebar-brand { padding: 24px 20px; border-bottom: 1px solid #1a1a2e; }
-        .sidebar-brand .brand-name { font-size: 1.5rem; font-weight: 800; color: #00ff88; letter-spacing: 1px; }
+        .sidebar { position: fixed; left: 0; top: 0; bottom: 0; width: 260px; background: #111111; border-right: 1px solid #252525; padding: 0; z-index: 100; display: flex; flex-direction: column; }
+        .sidebar-brand { padding: 24px 20px; border-bottom: 1px solid #252525; }
+        .sidebar-brand .brand-name { font-size: 1.5rem; font-weight: 800; color: #d4a843; letter-spacing: 1px; }
         .sidebar-brand .brand-name span { color: #fff; }
         .sidebar-brand .brand-role { font-size: 0.75rem; color: #555; margin-top: 4px; }
         .sidebar-brand .brand-role.super { color: #a855f7; }
@@ -48,20 +48,20 @@ $nuevos_usuarios = $conn->query("SELECT * FROM usuario WHERE rol='cliente' ORDER
         .nav-section { padding: 8px 20px 4px; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 2px; color: #444; font-weight: 600; }
         .sidebar-link { display: flex; align-items: center; gap: 12px; padding: 11px 20px; color: #666; font-size: 0.9rem; font-weight: 500; text-decoration: none; transition: all 0.2s; border-left: 3px solid transparent; margin: 2px 0; }
         .sidebar-link:hover { color: #fff; background: rgba(255,255,255,0.04); }
-        .sidebar-link.active { color: #00ff88; background: rgba(0,255,136,0.06); border-left-color: #00ff88; }
+        .sidebar-link.active { color: #d4a843; background: rgba(212,168,67,0.06); border-left-color: #d4a843; }
         .sidebar-link i { font-size: 1rem; width: 20px; }
         .sidebar-link .badge-count { margin-left: auto; background: #ff4444; color: #fff; font-size: 0.65rem; padding: 2px 6px; border-radius: 10px; }
-        .sidebar-footer { padding: 16px 20px; border-top: 1px solid #1a1a2e; }
+        .sidebar-footer { padding: 16px 20px; border-top: 1px solid #252525; }
         .user-info { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
-        .user-avatar { width: 36px; height: 36px; border-radius: 10px; background: rgba(0,255,136,0.15); border: 1px solid rgba(0,255,136,0.3); display: flex; align-items: center; justify-content: center; color: #00ff88; font-weight: 700; font-size: 0.9rem; }
+        .user-avatar { width: 36px; height: 36px; border-radius: 10px; background: rgba(212,168,67,0.15); border: 1px solid rgba(212,168,67,0.3); display: flex; align-items: center; justify-content: center; color: #d4a843; font-weight: 700; font-size: 0.9rem; }
         .user-name { font-size: 0.85rem; font-weight: 600; }
         .user-role { font-size: 0.7rem; color: #555; }
 
         /* MAIN */
         .main { margin-left: 260px; min-height: 100vh; }
-        .topbar { background: #0d0d1a; border-bottom: 1px solid #1a1a2e; padding: 16px 32px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 50; }
+        .topbar { background: #111111; border-bottom: 1px solid #252525; padding: 16px 32px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 50; }
         .topbar-title { font-size: 1.1rem; font-weight: 700; }
-        .topbar-title span { color: #00ff88; }
+        .topbar-title span { color: #d4a843; }
         .topbar-right { display: flex; align-items: center; gap: 12px; }
         .btn-logout { background: rgba(255,68,68,0.1); border: 1px solid rgba(255,68,68,0.2); color: #ff6b6b; border-radius: 8px; padding: 8px 16px; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.2s; }
         .btn-logout:hover { background: rgba(255,68,68,0.2); }
@@ -73,42 +73,42 @@ $nuevos_usuarios = $conn->query("SELECT * FROM usuario WHERE rol='cliente' ORDER
 
         /* STAT CARDS */
         .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 28px; }
-        .stat-card { background: #0d0d1a; border: 1px solid #1a1a2e; border-radius: 16px; padding: 24px; position: relative; overflow: hidden; transition: all 0.3s; }
+        .stat-card { background: #111111; border: 1px solid #252525; border-radius: 16px; padding: 24px; position: relative; overflow: hidden; transition: all 0.3s; }
         .stat-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; }
-        .stat-card.green::before { background: linear-gradient(90deg, #00ff88, transparent); }
+        .stat-card.green::before { background: linear-gradient(90deg, #d4a843, transparent); }
         .stat-card.blue::before { background: linear-gradient(90deg, #3b82f6, transparent); }
         .stat-card.purple::before { background: linear-gradient(90deg, #a855f7, transparent); }
         .stat-card.orange::before { background: linear-gradient(90deg, #f59e0b, transparent); }
         .stat-card.red::before { background: linear-gradient(90deg, #ef4444, transparent); }
         .stat-card:hover { border-color: #2a2a3e; transform: translateY(-2px); }
         .stat-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; margin-bottom: 16px; }
-        .stat-icon.green { background: rgba(0,255,136,0.1); }
+        .stat-icon.green { background: rgba(212,168,67,0.1); }
         .stat-icon.blue { background: rgba(59,130,246,0.1); }
         .stat-icon.purple { background: rgba(168,85,247,0.1); }
         .stat-icon.orange { background: rgba(245,158,11,0.1); }
         .stat-icon.red { background: rgba(239,68,68,0.1); }
         .stat-num { font-size: 2rem; font-weight: 800; line-height: 1; margin-bottom: 6px; }
-        .stat-num.green { color: #00ff88; }
+        .stat-num.green { color: #d4a843; }
         .stat-num.blue { color: #3b82f6; }
         .stat-num.purple { color: #a855f7; }
         .stat-num.orange { color: #f59e0b; }
         .stat-num.red { color: #ef4444; }
         .stat-label { font-size: 0.82rem; color: #555; font-weight: 500; }
         .stat-badge { position: absolute; top: 16px; right: 16px; font-size: 0.7rem; padding: 3px 8px; border-radius: 6px; font-weight: 600; }
-        .stat-badge.up { background: rgba(0,255,136,0.1); color: #00ff88; }
+        .stat-badge.up { background: rgba(212,168,67,0.1); color: #d4a843; }
         .stat-badge.warn { background: rgba(245,158,11,0.1); color: #f59e0b; }
 
         /* SECTION CARDS */
-        .section-card { background: #0d0d1a; border: 1px solid #1a1a2e; border-radius: 16px; overflow: hidden; margin-bottom: 24px; }
-        .section-header { padding: 20px 24px; border-bottom: 1px solid #1a1a2e; display: flex; justify-content: space-between; align-items: center; }
+        .section-card { background: #111111; border: 1px solid #252525; border-radius: 16px; overflow: hidden; margin-bottom: 24px; }
+        .section-header { padding: 20px 24px; border-bottom: 1px solid #252525; display: flex; justify-content: space-between; align-items: center; }
         .section-title { font-size: 0.95rem; font-weight: 700; }
-        .section-title i { color: #00ff88; margin-right: 8px; }
-        .section-link { font-size: 0.8rem; color: #00ff88; text-decoration: none; font-weight: 500; }
-        .section-link:hover { color: #00cc6a; }
+        .section-title i { color: #d4a843; margin-right: 8px; }
+        .section-link { font-size: 0.8rem; color: #d4a843; text-decoration: none; font-weight: 500; }
+        .section-link:hover { color: #c89a30; }
 
         /* TABLE */
         .dash-table { width: 100%; }
-        .dash-table th { padding: 12px 24px; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: #444; font-weight: 600; border-bottom: 1px solid #1a1a2e; background: #0a0a14; }
+        .dash-table th { padding: 12px 24px; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: #444; font-weight: 600; border-bottom: 1px solid #252525; background: #0a0a14; }
         .dash-table td { padding: 14px 24px; border-bottom: 1px solid #111; font-size: 0.875rem; }
         .dash-table tbody tr:hover { background: rgba(255,255,255,0.02); }
         .dash-table tbody tr:last-child td { border-bottom: none; }
@@ -117,7 +117,7 @@ $nuevos_usuarios = $conn->query("SELECT * FROM usuario WHERE rol='cliente' ORDER
         .status-badge { font-size: 0.72rem; padding: 4px 10px; border-radius: 6px; font-weight: 600; }
         .status-Pendiente { background: rgba(245,158,11,0.1); color: #f59e0b; border: 1px solid rgba(245,158,11,0.2); }
         .status-Pagado { background: rgba(59,130,246,0.1); color: #3b82f6; border: 1px solid rgba(59,130,246,0.2); }
-        .status-Entregado { background: rgba(0,255,136,0.1); color: #00ff88; border: 1px solid rgba(0,255,136,0.2); }
+        .status-Entregado { background: rgba(212,168,67,0.1); color: #d4a843; border: 1px solid rgba(212,168,67,0.2); }
 
         /* TOP PRODUCTOS */
         .prod-rank { display: flex; align-items: center; gap: 14px; padding: 16px 24px; border-bottom: 1px solid #111; transition: background 0.2s; }
@@ -134,7 +134,7 @@ $nuevos_usuarios = $conn->query("SELECT * FROM usuario WHERE rol='cliente' ORDER
         .prod-info .name { font-size: 0.875rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .prod-info .brand { font-size: 0.75rem; color: #555; }
         .prod-stats { text-align: right; }
-        .prod-stats .sold { font-size: 0.875rem; font-weight: 700; color: #00ff88; }
+        .prod-stats .sold { font-size: 0.875rem; font-weight: 700; color: #d4a843; }
         .prod-stats .revenue { font-size: 0.75rem; color: #555; }
 
         /* USUARIOS RECIENTES */
@@ -146,15 +146,15 @@ $nuevos_usuarios = $conn->query("SELECT * FROM usuario WHERE rol='cliente' ORDER
         .user-row .date { margin-left: auto; font-size: 0.75rem; color: #444; }
 
         /* INGRESO BOX */
-        .ingreso-hero { background: linear-gradient(135deg, #0a1f0a, #070711); border: 1px solid rgba(0,255,136,0.15); border-radius: 16px; padding: 28px; margin-bottom: 24px; }
+        .ingreso-hero { background: linear-gradient(135deg, #0a1f0a, #080808); border: 1px solid rgba(212,168,67,0.15); border-radius: 16px; padding: 28px; margin-bottom: 24px; }
         .ingreso-label { font-size: 0.8rem; color: #555; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
-        .ingreso-amount { font-size: 3rem; font-weight: 800; color: #00ff88; line-height: 1; }
+        .ingreso-amount { font-size: 3rem; font-weight: 800; color: #d4a843; line-height: 1; }
         .ingreso-sub { font-size: 0.8rem; color: #444; margin-top: 8px; }
 
         /* QUICK ACTIONS */
         .quick-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px; }
-        .quick-card { background: #0d0d1a; border: 1px solid #1a1a2e; border-radius: 14px; padding: 20px; text-align: center; text-decoration: none; color: #fff; transition: all 0.2s; }
-        .quick-card:hover { border-color: #00ff88; color: #00ff88; transform: translateY(-2px); background: rgba(0,255,136,0.03); }
+        .quick-card { background: #111111; border: 1px solid #252525; border-radius: 14px; padding: 20px; text-align: center; text-decoration: none; color: #fff; transition: all 0.2s; }
+        .quick-card:hover { border-color: #d4a843; color: #d4a843; transform: translateY(-2px); background: rgba(212,168,67,0.03); }
         .quick-card i { font-size: 1.8rem; display: block; margin-bottom: 10px; }
         .quick-card .q-title { font-size: 0.875rem; font-weight: 600; }
         .quick-card .q-sub { font-size: 0.75rem; color: #444; margin-top: 4px; }
@@ -162,7 +162,7 @@ $nuevos_usuarios = $conn->query("SELECT * FROM usuario WHERE rol='cliente' ORDER
         /* SCROLLBAR */
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #1a1a2e; border-radius: 2px; }
+        ::-webkit-scrollbar-thumb { background: #252525; border-radius: 2px; }
 
         @media (max-width: 1200px) {
             .stat-grid { grid-template-columns: repeat(2, 1fr); }
@@ -177,7 +177,7 @@ $nuevos_usuarios = $conn->query("SELECT * FROM usuario WHERE rol='cliente' ORDER
     <div class="sidebar-brand">
         <div class="brand-name">Gamer<span>Zone</span></div>
         <div class="brand-role <?= $es_super ? 'super' : '' ?>">
-            <?= $es_super ? '⭐ Super Administrador' : '👤 Administrador' ?>
+            <?= $es_super ? 'Super Administrador' : 'Administrador' ?>
         </div>
     </div>
     <nav class="sidebar-nav">
@@ -232,7 +232,7 @@ $nuevos_usuarios = $conn->query("SELECT * FROM usuario WHERE rol='cliente' ORDER
 
         <?php if($es_super): ?>
         <div class="super-banner">
-            <div class="super-icon">⭐</div>
+            <div class="super-icon"><i class="bi bi-star-fill" style="color:#a855f7;font-size:1.3rem;"></i></div>
             <div>
                 <div style="color:#a855f7;font-weight:700;font-size:0.9rem;">Modo Super Administrador Activo</div>
                 <div style="color:#555;font-size:0.8rem;margin-top:2px;">Tienes acceso total al sistema — crear admins, gestionar roles y eliminar usuarios.</div>
@@ -244,7 +244,7 @@ $nuevos_usuarios = $conn->query("SELECT * FROM usuario WHERE rol='cliente' ORDER
         <div class="stat-grid">
             <div class="stat-card green">
                 <span class="stat-badge up">Total</span>
-                <div class="stat-icon green"><i class="bi bi-box-seam" style="color:#00ff88"></i></div>
+                <div class="stat-icon green"><i class="bi bi-box-seam" style="color:#d4a843"></i></div>
                 <div class="stat-num green"><?= $total_productos ?></div>
                 <div class="stat-label">Productos en catálogo</div>
             </div>
@@ -328,7 +328,7 @@ $nuevos_usuarios = $conn->query("SELECT * FROM usuario WHERE rol='cliente' ORDER
                                     <div style="font-size:0.72rem;color:#444;"><?= htmlspecialchars($v['correo']) ?></div>
                                 </td>
                                 <td style="color:#555;font-size:0.8rem;"><?= date('d/m/Y H:i', strtotime($v['fecha'])) ?></td>
-                                <td><strong style="color:#00ff88;">Bs. <?= number_format($v['total'],2) ?></strong></td>
+                                <td><strong style="color:#d4a843;">Bs. <?= number_format($v['total'],2) ?></strong></td>
                                 <td><span class="status-badge status-<?= $v['estado_venta'] ?>"><?= $v['estado_venta'] ?></span></td>
                             </tr>
                             <?php endwhile; ?>
@@ -357,7 +357,7 @@ $nuevos_usuarios = $conn->query("SELECT * FROM usuario WHERE rol='cliente' ORDER
                             <?php if($p['imagen']): ?>
                                 <img src="../../assets/<?= $p['imagen'] ?>" alt="">
                             <?php else: ?>
-                                📦
+                                <i class="bi bi-box" style="font-size:1.5rem;opacity:0.3;"></i>
                             <?php endif; ?>
                         </div>
                         <div class="prod-info">

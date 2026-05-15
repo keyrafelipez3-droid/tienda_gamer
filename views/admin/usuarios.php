@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 session_start();
 if(!isset($_SESSION['usuario_id']) || !in_array($_SESSION['usuario_rol'], ['admin','super_admin'])) {
     header('Location: ../auth/login.php'); exit;
@@ -41,7 +41,9 @@ if($_SERVER['REQUEST_METHOD'] === 'POST') {
     if($accion === 'eliminar' && $es_super) {
         $id = intval($_POST['id_usuario']);
         if($id !== $_SESSION['usuario_id']) {
-            $conn->prepare("DELETE FROM favorito WHERE id_usuario=?")->bind_param("i",$id) && $conn->prepare("DELETE FROM favorito WHERE id_usuario=?")->execute();
+            $del_fav = $conn->prepare("DELETE FROM favorito WHERE id_usuario=?");
+            $del_fav->bind_param("i", $id);
+            $del_fav->execute();
             $stmt = $conn->prepare("DELETE FROM usuario WHERE id_usuario=? AND rol != 'super_admin'");
             $stmt->bind_param("i", $id);
             $stmt->execute();
@@ -64,26 +66,26 @@ $usuarios = $conn->query("SELECT * FROM usuario ORDER BY fecha_registro DESC");
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
     <style>
         body { background-color: #0a0a0a; color: #fff; font-family: 'Segoe UI', sans-serif; }
-        .navbar { background-color: #0d0d0d; border-bottom: 2px solid #00ff88; }
-        .navbar-brand { color: #00ff88 !important; font-weight: 800; }
+        .navbar { background-color: #0d0d0d; border-bottom: 2px solid #d4a843; }
+        .navbar-brand { color: #d4a843 !important; font-weight: 800; }
         .navbar-brand span { color: #fff; }
         .nav-link { color: #ccc !important; }
-        .nav-link:hover, .nav-link.active { color: #00ff88 !important; }
-        .btn-gamer { background: #00ff88; color: #000; font-weight: 700; border: none; border-radius: 8px; }
-        .btn-gamer:hover { background: #00cc6a; color: #000; }
+        .nav-link:hover, .nav-link.active { color: #d4a843 !important; }
+        .btn-gamer { background: #d4a843; color: #000; font-weight: 700; border: none; border-radius: 8px; }
+        .btn-gamer:hover { background: #c89a30; color: #000; }
         .card-dark { background: #111; border: 1px solid #222; border-radius: 16px; overflow: hidden; }
         .table { color: #fff; }
-        .table thead th { color: #00ff88; border-color: #222; background: #0d0d0d; }
+        .table thead th { color: #d4a843; border-color: #222; background: #0d0d0d; }
         .table td { border-color: #1a1a1a; vertical-align: middle; }
         .table tbody tr:hover { background: #161616; }
         .modal-content { background: #111; border: 1px solid #333; color: #fff; }
         .modal-header { border-bottom: 1px solid #222; }
         .modal-footer { border-top: 1px solid #222; }
         .form-control, .form-select { background: #1a1a1a; border: 1px solid #333; color: #fff; border-radius: 8px; }
-        .form-control:focus, .form-select:focus { background: #1a1a1a; border-color: #00ff88; color: #fff; box-shadow: none; }
+        .form-control:focus, .form-select:focus { background: #1a1a1a; border-color: #d4a843; color: #fff; box-shadow: none; }
         .form-select option { background: #1a1a1a; }
         .avatar { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1rem; }
-        .alert-success-custom { background: #0d2a0d; border: 1px solid #00ff88; color: #00ff88; border-radius: 10px; padding: 12px 16px; }
+        .alert-success-custom { background: #0d2a0d; border: 1px solid #d4a843; color: #d4a843; border-radius: 10px; padding: 12px 16px; }
         .alert-danger-custom { background: #2a0d0d; border: 1px solid #ff4444; color: #ff4444; border-radius: 10px; padding: 12px 16px; }
         .super-badge { background: linear-gradient(135deg, #f59e0b, #ef4444); color: #fff; font-size: 0.7rem; font-weight: 700; padding: 3px 10px; border-radius: 6px; }
     </style>
@@ -115,7 +117,7 @@ $usuarios = $conn->query("SELECT * FROM usuario ORDER BY fecha_registro DESC");
     <?php endif; ?>
 
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h3 class="fw-bold mb-0" style="color:#00ff88"><i class="bi bi-people"></i> Gestión de Usuarios</h3>
+        <h3 class="fw-bold mb-0" style="color:#d4a843"><i class="bi bi-people"></i> Gestión de Usuarios</h3>
         <?php if($es_super): ?>
         <button class="btn btn-gamer" data-bs-toggle="modal" data-bs-target="#modalCrear">
             <i class="bi bi-plus-lg"></i> Crear Usuario
@@ -142,7 +144,7 @@ $usuarios = $conn->query("SELECT * FROM usuario ORDER BY fecha_registro DESC");
                     <td>
                         <div class="d-flex align-items-center gap-2">
                             <?php
-                            $colors = ['super_admin'=>'#f59e0b','admin'=>'#00ff88','cliente'=>'#6366f1'];
+                            $colors = ['super_admin'=>'#f59e0b','admin'=>'#d4a843','cliente'=>'#6366f1'];
                             $color = $colors[$u['rol']] ?? '#888';
                             ?>
                             <div class="avatar" style="background:<?= $color ?>22; border:1px solid <?= $color ?>; color:<?= $color ?>">
@@ -159,7 +161,7 @@ $usuarios = $conn->query("SELECT * FROM usuario ORDER BY fecha_registro DESC");
                     <td class="text-muted"><?= htmlspecialchars($u['correo']) ?></td>
                     <td>
                         <?php if($u['rol'] === 'super_admin'): ?>
-                            <span class="super-badge">⭐ Super Admin</span>
+                            <span class="super-badge">Super Admin</span>
                         <?php elseif($u['rol'] === 'admin'): ?>
                             <span class="badge bg-danger">Admin</span>
                         <?php else: ?>

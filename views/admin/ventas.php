@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 session_start();
 if (!isset($_SESSION['usuario_id']) || !in_array($_SESSION['usuario_rol'], ['admin', 'super_admin'])) {
     header('Location: ../auth/login.php');
@@ -92,7 +92,7 @@ function imgSrc($img, $prefix = '../../assets/')
         }
 
         body {
-            background: #070711;
+            background: #080808;
             color: #fff;
             font-family: 'Inter', sans-serif;
         }
@@ -103,8 +103,8 @@ function imgSrc($img, $prefix = '../../assets/')
             top: 0;
             bottom: 0;
             width: 260px;
-            background: #0d0d1a;
-            border-right: 1px solid #1a1a2e;
+            background: #111111;
+            border-right: 1px solid #252525;
             display: flex;
             flex-direction: column;
             z-index: 100;
@@ -112,13 +112,13 @@ function imgSrc($img, $prefix = '../../assets/')
 
         .sidebar-brand {
             padding: 24px 20px;
-            border-bottom: 1px solid #1a1a2e;
+            border-bottom: 1px solid #252525;
         }
 
         .brand-name {
             font-size: 1.5rem;
             font-weight: 800;
-            color: #00ff88;
+            color: #d4a843;
         }
 
         .brand-name span {
@@ -169,9 +169,9 @@ function imgSrc($img, $prefix = '../../assets/')
         }
 
         .sidebar-link.active {
-            color: #00ff88;
-            background: rgba(0, 255, 136, 0.06);
-            border-left-color: #00ff88;
+            color: #d4a843;
+            background: rgba(212, 168, 67, 0.06);
+            border-left-color: #d4a843;
         }
 
         .sidebar-link i {
@@ -191,7 +191,7 @@ function imgSrc($img, $prefix = '../../assets/')
 
         .sidebar-footer {
             padding: 16px 20px;
-            border-top: 1px solid #1a1a2e;
+            border-top: 1px solid #252525;
         }
 
         .user-info {
@@ -205,12 +205,12 @@ function imgSrc($img, $prefix = '../../assets/')
             width: 34px;
             height: 34px;
             border-radius: 8px;
-            background: rgba(0, 255, 136, 0.1);
-            border: 1px solid rgba(0, 255, 136, 0.2);
+            background: rgba(212, 168, 67, 0.1);
+            border: 1px solid rgba(212, 168, 67, 0.2);
             display: flex;
             align-items: center;
             justify-content: center;
-            color: #00ff88;
+            color: #d4a843;
             font-weight: 700;
             font-size: 0.85rem;
         }
@@ -248,8 +248,8 @@ function imgSrc($img, $prefix = '../../assets/')
         }
 
         .topbar {
-            background: #0d0d1a;
-            border-bottom: 1px solid #1a1a2e;
+            background: #111111;
+            border-bottom: 1px solid #252525;
             padding: 18px 32px;
             display: flex;
             justify-content: space-between;
@@ -265,7 +265,7 @@ function imgSrc($img, $prefix = '../../assets/')
         }
 
         .topbar-title span {
-            color: #00ff88;
+            color: #d4a843;
         }
 
         .breadcrumb-nav {
@@ -280,7 +280,7 @@ function imgSrc($img, $prefix = '../../assets/')
         }
 
         .breadcrumb-nav a:hover {
-            color: #00ff88;
+            color: #d4a843;
         }
 
         .content {
@@ -295,8 +295,8 @@ function imgSrc($img, $prefix = '../../assets/')
         }
 
         .mini-stat {
-            background: #0d0d1a;
-            border: 1px solid #1a1a2e;
+            background: #111111;
+            border: 1px solid #252525;
             border-radius: 14px;
             padding: 20px;
             display: flex;
@@ -318,7 +318,7 @@ function imgSrc($img, $prefix = '../../assets/')
         .mini-stat-num {
             font-size: 1.6rem;
             font-weight: 800;
-            color: #00ff88;
+            color: #d4a843;
         }
 
         .mini-stat-label {
@@ -328,8 +328,8 @@ function imgSrc($img, $prefix = '../../assets/')
 
         /* FILTROS */
         .filter-card {
-            background: #0d0d1a;
-            border: 1px solid #1a1a2e;
+            background: #111111;
+            border: 1px solid #252525;
             border-radius: 16px;
             padding: 20px;
             margin-bottom: 24px;
@@ -348,8 +348,8 @@ function imgSrc($img, $prefix = '../../assets/')
         }
 
         .filter-input {
-            background: #111120;
-            border: 1px solid #1a1a2e;
+            background: #181818;
+            border: 1px solid #252525;
             color: #fff;
             border-radius: 10px;
             padding: 10px 14px;
@@ -360,8 +360,8 @@ function imgSrc($img, $prefix = '../../assets/')
 
         .filter-input:focus {
             outline: none;
-            border-color: #00ff88;
-            box-shadow: 0 0 0 3px rgba(0, 255, 136, 0.08);
+            border-color: #d4a843;
+            box-shadow: 0 0 0 3px rgba(212, 168, 67, 0.08);
         }
 
         .filter-input::placeholder {
@@ -369,8 +369,8 @@ function imgSrc($img, $prefix = '../../assets/')
         }
 
         .filter-select {
-            background: #111120;
-            border: 1px solid #1a1a2e;
+            background: #181818;
+            border: 1px solid #252525;
             color: #fff;
             border-radius: 10px;
             padding: 10px 14px;
@@ -381,15 +381,15 @@ function imgSrc($img, $prefix = '../../assets/')
 
         .filter-select:focus {
             outline: none;
-            border-color: #00ff88;
+            border-color: #d4a843;
         }
 
         .filter-select option {
-            background: #111120;
+            background: #181818;
         }
 
         .btn-filter {
-            background: #00ff88;
+            background: #d4a843;
             color: #000;
             font-weight: 700;
             border: none;
@@ -404,12 +404,12 @@ function imgSrc($img, $prefix = '../../assets/')
         }
 
         .btn-filter:hover {
-            background: #00cc6a;
+            background: #c89a30;
         }
 
         .btn-clear-f {
             background: rgba(255, 255, 255, 0.05);
-            border: 1px solid #1a1a2e;
+            border: 1px solid #252525;
             color: #aaa;
             border-radius: 10px;
             padding: 10px 16px;
@@ -433,20 +433,20 @@ function imgSrc($img, $prefix = '../../assets/')
         }
 
         .results-info strong {
-            color: #00ff88;
+            color: #d4a843;
         }
 
         /* TABLE */
         .table-card {
-            background: #0d0d1a;
-            border: 1px solid #1a1a2e;
+            background: #111111;
+            border: 1px solid #252525;
             border-radius: 16px;
             overflow: hidden;
         }
 
         .table-header {
             padding: 20px 24px;
-            border-bottom: 1px solid #1a1a2e;
+            border-bottom: 1px solid #252525;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -471,7 +471,7 @@ function imgSrc($img, $prefix = '../../assets/')
             letter-spacing: 1px;
             color: #444;
             font-weight: 600;
-            border-bottom: 1px solid #1a1a2e;
+            border-bottom: 1px solid #252525;
             background: #0a0a14;
             text-align: left;
             white-space: nowrap;
@@ -513,9 +513,9 @@ function imgSrc($img, $prefix = '../../assets/')
         }
 
         .status-Entregado {
-            background: rgba(0, 255, 136, 0.1);
-            color: #00ff88;
-            border: 1px solid rgba(0, 255, 136, 0.2);
+            background: rgba(212, 168, 67, 0.1);
+            color: #d4a843;
+            border: 1px solid rgba(212, 168, 67, 0.2);
             border-radius: 6px;
             padding: 4px 10px;
             font-size: 0.72rem;
@@ -555,9 +555,9 @@ function imgSrc($img, $prefix = '../../assets/')
         }
 
         .alert-ok {
-            background: rgba(0, 255, 136, 0.06);
-            border: 1px solid rgba(0, 255, 136, 0.2);
-            color: #00ff88;
+            background: rgba(212, 168, 67, 0.06);
+            border: 1px solid rgba(212, 168, 67, 0.2);
+            color: #d4a843;
             border-radius: 12px;
             padding: 14px 20px;
             margin-bottom: 20px;
@@ -567,19 +567,19 @@ function imgSrc($img, $prefix = '../../assets/')
         }
 
         .modal-content {
-            background: #0d0d1a;
-            border: 1px solid #1a1a2e;
+            background: #111111;
+            border: 1px solid #252525;
             border-radius: 16px;
             color: #fff;
         }
 
         .modal-header {
-            border-bottom: 1px solid #1a1a2e;
+            border-bottom: 1px solid #252525;
             padding: 20px 24px;
         }
 
         .modal-footer {
-            border-top: 1px solid #1a1a2e;
+            border-top: 1px solid #252525;
             padding: 16px 24px;
         }
 
@@ -595,8 +595,8 @@ function imgSrc($img, $prefix = '../../assets/')
         }
 
         .form-select {
-            background: #111120;
-            border: 1px solid #1a1a2e;
+            background: #181818;
+            border: 1px solid #252525;
             color: #fff;
             border-radius: 10px;
             padding: 10px 14px;
@@ -605,20 +605,20 @@ function imgSrc($img, $prefix = '../../assets/')
         }
 
         .form-select:focus {
-            background: #111120;
-            border-color: #00ff88;
+            background: #181818;
+            border-color: #d4a843;
             color: #fff;
-            box-shadow: 0 0 0 3px rgba(0, 255, 136, 0.08);
+            box-shadow: 0 0 0 3px rgba(212, 168, 67, 0.08);
             outline: none;
         }
 
         .form-select option {
-            background: #111120;
+            background: #181818;
         }
 
         .btn-cancel {
             background: rgba(255, 255, 255, 0.05);
-            border: 1px solid #1a1a2e;
+            border: 1px solid #252525;
             color: #aaa;
             border-radius: 10px;
             padding: 10px 20px;
@@ -666,7 +666,7 @@ function imgSrc($img, $prefix = '../../assets/')
         }
 
         ::-webkit-scrollbar-thumb {
-            background: #1a1a2e;
+            background: #252525;
             border-radius: 2px;
         }
     </style>
@@ -678,7 +678,7 @@ function imgSrc($img, $prefix = '../../assets/')
         <div class="sidebar-brand">
             <div class="brand-name">Gamer<span>Zone</span></div>
             <div class="brand-role <?= $es_super ? 'super' : '' ?>">
-                <?= $es_super ? '⭐ Super Administrador' : '👤 Administrador' ?></div>
+                <?= $es_super ? 'Super Administrador' : 'Administrador' ?></div>
         </div>
         <nav class="sidebar-nav">
             <div class="nav-section">Principal</div>
@@ -712,7 +712,7 @@ function imgSrc($img, $prefix = '../../assets/')
     <div class="main">
         <div class="topbar">
             <div>
-                <div class="topbar-title"><i class="bi bi-bag" style="color:#00ff88"></i> <span>Ventas</span></div>
+                <div class="topbar-title"><i class="bi bi-bag" style="color:#d4a843"></i> <span>Ventas</span></div>
                 <div class="breadcrumb-nav"><a href="dashboard.php">Dashboard</a> / Ventas</div>
             </div>
             <?php if ($pendientes > 0): ?>
@@ -734,28 +734,28 @@ function imgSrc($img, $prefix = '../../assets/')
             <!-- STATS -->
             <div class="stats-row">
                 <div class="mini-stat">
-                    <div class="mini-stat-icon" style="background:rgba(0,255,136,0.1);">🛒</div>
+                    <div class="mini-stat-icon" style="background:rgba(212,168,67,0.1);"><i class="bi bi-bag-check" style="color:#d4a843;font-size:1.1rem;"></i></div>
                     <div>
                         <div class="mini-stat-num"><?= $total_ventas ?></div>
                         <div class="mini-stat-label">Ventas totales</div>
                     </div>
                 </div>
                 <div class="mini-stat">
-                    <div class="mini-stat-icon" style="background:rgba(59,130,246,0.1);">📅</div>
+                    <div class="mini-stat-icon" style="background:rgba(59,130,246,0.1);"><i class="bi bi-calendar-check" style="color:#3b82f6;font-size:1.1rem;"></i></div>
                     <div>
                         <div class="mini-stat-num" style="color:#3b82f6"><?= $ventas_hoy ?></div>
                         <div class="mini-stat-label">Ventas hoy</div>
                     </div>
                 </div>
                 <div class="mini-stat">
-                    <div class="mini-stat-icon" style="background:rgba(245,158,11,0.1);">⏳</div>
+                    <div class="mini-stat-icon" style="background:rgba(245,158,11,0.1);"><i class="bi bi-clock" style="color:#f59e0b;font-size:1.1rem;"></i></div>
                     <div>
                         <div class="mini-stat-num" style="color:#f59e0b"><?= $pendientes ?></div>
                         <div class="mini-stat-label">Pendientes</div>
                     </div>
                 </div>
                 <div class="mini-stat">
-                    <div class="mini-stat-icon" style="background:rgba(0,255,136,0.1);">💰</div>
+                    <div class="mini-stat-icon" style="background:rgba(212,168,67,0.1);"><i class="bi bi-cash-coin" style="color:#d4a843;font-size:1.1rem;"></i></div>
                     <div>
                         <div class="mini-stat-num" style="font-size:1.2rem;">Bs.<?= number_format($ingresos_total, 0) ?>
                         </div>
@@ -766,7 +766,7 @@ function imgSrc($img, $prefix = '../../assets/')
 
             <!-- FILTROS -->
             <div class="filter-card">
-                <div class="filter-title"><i class="bi bi-funnel" style="color:#00ff88"></i> Filtrar ventas</div>
+                <div class="filter-title"><i class="bi bi-funnel" style="color:#d4a843"></i> Filtrar ventas</div>
                 <form method="GET" class="row g-3 align-items-end">
                     <div class="col-md-3">
                         <label style="font-size:0.75rem;color:#555;margin-bottom:6px;display:block;">Buscar cliente o
@@ -782,9 +782,9 @@ function imgSrc($img, $prefix = '../../assets/')
                         <label style="font-size:0.75rem;color:#555;margin-bottom:6px;display:block;">Estado</label>
                         <select name="estado" class="filter-select">
                             <option value="">Todos</option>
-                            <option value="Pendiente" <?= $estado_f == 'Pendiente' ? 'selected' : '' ?>>⏳ Pendiente</option>
-                            <option value="Pagado" <?= $estado_f == 'Pagado' ? 'selected' : '' ?>>💳 Pagado</option>
-                            <option value="Entregado" <?= $estado_f == 'Entregado' ? 'selected' : '' ?>>✅ Entregado</option>
+                            <option value="Pendiente" <?= $estado_f == 'Pendiente' ? 'selected' : '' ?>>Pendiente</option>
+                            <option value="Pagado" <?= $estado_f == 'Pagado' ? 'selected' : '' ?>>Pagado</option>
+                            <option value="Entregado" <?= $estado_f == 'Entregado' ? 'selected' : '' ?>>Entregado</option>
                         </select>
                     </div>
                     <div class="col-md-2">
@@ -817,7 +817,7 @@ function imgSrc($img, $prefix = '../../assets/')
             <!-- TABLA -->
             <div class="table-card">
                 <div class="table-header">
-                    <div class="table-title"><i class="bi bi-bag" style="color:#00ff88;margin-right:8px;"></i>Registro
+                    <div class="table-title"><i class="bi bi-bag" style="color:#d4a843;margin-right:8px;"></i>Registro
                         de Ventas</div>
                     <span style="font-size:0.78rem;color:#555;"><?= $total_filtradas ?>
                         resultado<?= $total_filtradas != 1 ? 's' : '' ?></span>
@@ -858,7 +858,7 @@ function imgSrc($img, $prefix = '../../assets/')
                                     </td>
                                     <td style="color:#555;font-size:0.8rem;"><?= date('d/m/Y H:i', strtotime($v['fecha'])) ?>
                                     </td>
-                                    <td><strong style="color:#00ff88;">Bs. <?= number_format($v['total'], 2) ?></strong></td>
+                                    <td><strong style="color:#d4a843;">Bs. <?= number_format($v['total'], 2) ?></strong></td>
                                     <td><span class="status-<?= $v['estado_venta'] ?>"><?= $v['estado_venta'] ?></span></td>
                                     <td>
                                         <div style="display:flex;gap:6px;">
@@ -897,14 +897,14 @@ function imgSrc($img, $prefix = '../../assets/')
                 </div>
                 <div class="modal-body">
                     <!-- INFO CLIENTE -->
-                    <div style="background:#111120;border-radius:12px;padding:16px;margin-bottom:20px;">
+                    <div style="background:#181818;border-radius:12px;padding:16px;margin-bottom:20px;">
                         <div
                             style="font-size:0.72rem;color:#444;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;">
                             Información del cliente</div>
                         <div class="row g-3">
                             <div class="col-md-3">
                                 <div style="font-size:0.72rem;color:#555;margin-bottom:2px;">Pedido</div>
-                                <div id="detId" style="font-weight:700;color:#00ff88;"></div>
+                                <div id="detId" style="font-weight:700;color:#d4a843;"></div>
                             </div>
                             <div class="col-md-3">
                                 <div style="font-size:0.72rem;color:#555;margin-bottom:2px;">Cliente</div>
@@ -926,7 +926,7 @@ function imgSrc($img, $prefix = '../../assets/')
                             </div>
                             <div class="col-md-3">
                                 <div style="font-size:0.72rem;color:#555;margin-bottom:2px;">Total</div>
-                                <div id="detTotal" style="font-size:1.3rem;font-weight:800;color:#00ff88;"></div>
+                                <div id="detTotal" style="font-size:1.3rem;font-weight:800;color:#d4a843;"></div>
                             </div>
                         </div>
                     </div>
@@ -959,9 +959,9 @@ function imgSrc($img, $prefix = '../../assets/')
                     <div class="modal-body">
                         <label class="form-label">Nuevo estado de la venta</label>
                         <select name="estado_venta" id="estadoSelect" class="form-select" style="margin-top:8px;">
-                            <option value="Pendiente">⏳ Pendiente</option>
-                            <option value="Pagado">💳 Pagado</option>
-                            <option value="Entregado">✅ Entregado</option>
+                            <option value="Pendiente">Pendiente</option>
+                            <option value="Pagado">Pagado</option>
+                            <option value="Entregado">Entregado</option>
                         </select>
                     </div>
                     <div class="modal-footer">
@@ -990,7 +990,7 @@ function imgSrc($img, $prefix = '../../assets/')
             document.getElementById('detFecha').textContent = btn.dataset.fecha;
             document.getElementById('detTotal').textContent = 'Bs. ' + btn.dataset.total;
 
-            const estados = { Pendiente: '#f59e0b', Pagado: '#3b82f6', Entregado: '#00ff88' };
+            const estados = { Pendiente: '#f59e0b', Pagado: '#3b82f6', Entregado: '#d4a843' };
             const col = estados[btn.dataset.estado] || '#888';
             document.getElementById('detEstado').innerHTML = `<span style="background:${col}18;color:${col};border:1px solid ${col}40;border-radius:6px;padding:3px 10px;font-size:0.78rem;font-weight:600;">${btn.dataset.estado}</span>`;
 

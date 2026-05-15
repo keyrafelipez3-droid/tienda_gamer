@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 session_start();
 if (!isset($_SESSION['usuario_id']) || !in_array($_SESSION['usuario_rol'], ['admin', 'super_admin'])) {
     header('Location: ../auth/login.php');
@@ -117,7 +117,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Si hay nueva imagen principal marcada
             if (!empty($_POST['imagen_principal_id'])) {
                 $id_img_p = intval($_POST['imagen_principal_id']);
-                $conn->prepare("UPDATE producto_imagen SET es_principal=0 WHERE id_producto=?")->bind_param("i", $id) && $conn->prepare("UPDATE producto_imagen SET es_principal=0 WHERE id_producto=?")->execute();
+                $reset_p = $conn->prepare("UPDATE producto_imagen SET es_principal=0 WHERE id_producto=?");
+                $reset_p->bind_param("i", $id);
+                $reset_p->execute();
                 $upd_p = $conn->prepare("UPDATE producto_imagen SET es_principal=1 WHERE id_imagen=? AND id_producto=?");
                 $upd_p->bind_param("ii", $id_img_p, $id);
                 $upd_p->execute();
@@ -137,7 +139,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($accion === 'eliminar') {
         $id = intval($_POST['id_producto']);
-        $conn->prepare("DELETE FROM producto_imagen WHERE id_producto=?")->bind_param("i", $id);
+        $del_imgs = $conn->prepare("DELETE FROM producto_imagen WHERE id_producto=?");
+        $del_imgs->bind_param("i", $id);
+        $del_imgs->execute();
         $stmt = $conn->prepare("DELETE FROM producto WHERE id_producto=?");
         $stmt->bind_param("i", $id);
         $stmt->execute();
@@ -173,7 +177,7 @@ $stock_bajo = $conn->query("SELECT COUNT(*) as t FROM producto WHERE stock<=5 AN
         }
 
         body {
-            background: #070711;
+            background: #080808;
             color: #fff;
             font-family: 'Inter', sans-serif;
         }
@@ -184,8 +188,8 @@ $stock_bajo = $conn->query("SELECT COUNT(*) as t FROM producto WHERE stock<=5 AN
             top: 0;
             bottom: 0;
             width: 260px;
-            background: #0d0d1a;
-            border-right: 1px solid #1a1a2e;
+            background: #111111;
+            border-right: 1px solid #252525;
             display: flex;
             flex-direction: column;
             z-index: 100;
@@ -193,13 +197,13 @@ $stock_bajo = $conn->query("SELECT COUNT(*) as t FROM producto WHERE stock<=5 AN
 
         .sidebar-brand {
             padding: 24px 20px;
-            border-bottom: 1px solid #1a1a2e;
+            border-bottom: 1px solid #252525;
         }
 
         .brand-name {
             font-size: 1.5rem;
             font-weight: 800;
-            color: #00ff88;
+            color: #d4a843;
         }
 
         .brand-name span {
@@ -250,9 +254,9 @@ $stock_bajo = $conn->query("SELECT COUNT(*) as t FROM producto WHERE stock<=5 AN
         }
 
         .sidebar-link.active {
-            color: #00ff88;
-            background: rgba(0, 255, 136, 0.06);
-            border-left-color: #00ff88;
+            color: #d4a843;
+            background: rgba(212, 168, 67, 0.06);
+            border-left-color: #d4a843;
         }
 
         .sidebar-link i {
@@ -262,7 +266,7 @@ $stock_bajo = $conn->query("SELECT COUNT(*) as t FROM producto WHERE stock<=5 AN
 
         .sidebar-footer {
             padding: 16px 20px;
-            border-top: 1px solid #1a1a2e;
+            border-top: 1px solid #252525;
         }
 
         .user-info {
@@ -276,12 +280,12 @@ $stock_bajo = $conn->query("SELECT COUNT(*) as t FROM producto WHERE stock<=5 AN
             width: 34px;
             height: 34px;
             border-radius: 8px;
-            background: rgba(0, 255, 136, 0.1);
-            border: 1px solid rgba(0, 255, 136, 0.2);
+            background: rgba(212, 168, 67, 0.1);
+            border: 1px solid rgba(212, 168, 67, 0.2);
             display: flex;
             align-items: center;
             justify-content: center;
-            color: #00ff88;
+            color: #d4a843;
             font-weight: 700;
             font-size: 0.85rem;
         }
@@ -319,8 +323,8 @@ $stock_bajo = $conn->query("SELECT COUNT(*) as t FROM producto WHERE stock<=5 AN
         }
 
         .topbar {
-            background: #0d0d1a;
-            border-bottom: 1px solid #1a1a2e;
+            background: #111111;
+            border-bottom: 1px solid #252525;
             padding: 18px 32px;
             display: flex;
             justify-content: space-between;
@@ -336,7 +340,7 @@ $stock_bajo = $conn->query("SELECT COUNT(*) as t FROM producto WHERE stock<=5 AN
         }
 
         .topbar-title span {
-            color: #00ff88;
+            color: #d4a843;
         }
 
         .breadcrumb-nav {
@@ -351,7 +355,7 @@ $stock_bajo = $conn->query("SELECT COUNT(*) as t FROM producto WHERE stock<=5 AN
         }
 
         .breadcrumb-nav a:hover {
-            color: #00ff88;
+            color: #d4a843;
         }
 
         .content {
@@ -359,7 +363,7 @@ $stock_bajo = $conn->query("SELECT COUNT(*) as t FROM producto WHERE stock<=5 AN
         }
 
         .btn-gamer {
-            background: #00ff88;
+            background: #d4a843;
             color: #000;
             font-weight: 700;
             border: none;
@@ -374,9 +378,9 @@ $stock_bajo = $conn->query("SELECT COUNT(*) as t FROM producto WHERE stock<=5 AN
         }
 
         .btn-gamer:hover {
-            background: #00cc6a;
+            background: #c89a30;
             transform: translateY(-1px);
-            box-shadow: 0 4px 15px rgba(0, 255, 136, 0.2);
+            box-shadow: 0 4px 15px rgba(212, 168, 67, 0.2);
         }
 
         .stats-row {
@@ -387,8 +391,8 @@ $stock_bajo = $conn->query("SELECT COUNT(*) as t FROM producto WHERE stock<=5 AN
         }
 
         .mini-stat {
-            background: #0d0d1a;
-            border: 1px solid #1a1a2e;
+            background: #111111;
+            border: 1px solid #252525;
             border-radius: 14px;
             padding: 20px;
             display: flex;
@@ -410,7 +414,7 @@ $stock_bajo = $conn->query("SELECT COUNT(*) as t FROM producto WHERE stock<=5 AN
         .mini-stat-num {
             font-size: 1.6rem;
             font-weight: 800;
-            color: #00ff88;
+            color: #d4a843;
         }
 
         .mini-stat-label {
@@ -419,15 +423,15 @@ $stock_bajo = $conn->query("SELECT COUNT(*) as t FROM producto WHERE stock<=5 AN
         }
 
         .table-card {
-            background: #0d0d1a;
-            border: 1px solid #1a1a2e;
+            background: #111111;
+            border: 1px solid #252525;
             border-radius: 16px;
             overflow: hidden;
         }
 
         .table-header {
             padding: 20px 24px;
-            border-bottom: 1px solid #1a1a2e;
+            border-bottom: 1px solid #252525;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -441,8 +445,8 @@ $stock_bajo = $conn->query("SELECT COUNT(*) as t FROM producto WHERE stock<=5 AN
         }
 
         .search-box {
-            background: #111120;
-            border: 1px solid #1a1a2e;
+            background: #181818;
+            border: 1px solid #252525;
             border-radius: 8px;
             padding: 8px 14px;
             color: #fff;
@@ -452,7 +456,7 @@ $stock_bajo = $conn->query("SELECT COUNT(*) as t FROM producto WHERE stock<=5 AN
 
         .search-box:focus {
             outline: none;
-            border-color: #00ff88;
+            border-color: #d4a843;
         }
 
         .search-box::placeholder {
@@ -471,7 +475,7 @@ $stock_bajo = $conn->query("SELECT COUNT(*) as t FROM producto WHERE stock<=5 AN
             letter-spacing: 1px;
             color: #444;
             font-weight: 600;
-            border-bottom: 1px solid #1a1a2e;
+            border-bottom: 1px solid #252525;
             background: #0a0a14;
             text-align: left;
             white-space: nowrap;
@@ -502,7 +506,7 @@ $stock_bajo = $conn->query("SELECT COUNT(*) as t FROM producto WHERE stock<=5 AN
             justify-content: center;
             font-size: 1.4rem;
             overflow: hidden;
-            border: 1px solid #1a1a2e;
+            border: 1px solid #252525;
             flex-shrink: 0;
         }
 
@@ -513,9 +517,9 @@ $stock_bajo = $conn->query("SELECT COUNT(*) as t FROM producto WHERE stock<=5 AN
         }
 
         .badge-cat {
-            background: rgba(0, 255, 136, 0.08);
-            border: 1px solid rgba(0, 255, 136, 0.15);
-            color: #00ff88;
+            background: rgba(212, 168, 67, 0.08);
+            border: 1px solid rgba(212, 168, 67, 0.15);
+            color: #d4a843;
             border-radius: 6px;
             padding: 3px 10px;
             font-size: 0.72rem;
@@ -523,9 +527,9 @@ $stock_bajo = $conn->query("SELECT COUNT(*) as t FROM producto WHERE stock<=5 AN
         }
 
         .stock-ok {
-            background: rgba(0, 255, 136, 0.08);
-            border: 1px solid rgba(0, 255, 136, 0.2);
-            color: #00ff88;
+            background: rgba(212, 168, 67, 0.08);
+            border: 1px solid rgba(212, 168, 67, 0.2);
+            color: #d4a843;
             border-radius: 6px;
             padding: 3px 10px;
             font-size: 0.72rem;
@@ -553,9 +557,9 @@ $stock_bajo = $conn->query("SELECT COUNT(*) as t FROM producto WHERE stock<=5 AN
         }
 
         .estado-on {
-            background: rgba(0, 255, 136, 0.08);
-            color: #00ff88;
-            border: 1px solid rgba(0, 255, 136, 0.2);
+            background: rgba(212, 168, 67, 0.08);
+            color: #d4a843;
+            border: 1px solid rgba(212, 168, 67, 0.2);
             border-radius: 6px;
             padding: 3px 10px;
             font-size: 0.72rem;
@@ -565,7 +569,7 @@ $stock_bajo = $conn->query("SELECT COUNT(*) as t FROM producto WHERE stock<=5 AN
         .estado-off {
             background: rgba(100, 100, 100, 0.08);
             color: #555;
-            border: 1px solid #1a1a2e;
+            border: 1px solid #252525;
             border-radius: 6px;
             padding: 3px 10px;
             font-size: 0.72rem;
@@ -619,9 +623,9 @@ $stock_bajo = $conn->query("SELECT COUNT(*) as t FROM producto WHERE stock<=5 AN
         }
 
         .alert-ok {
-            background: rgba(0, 255, 136, 0.06);
-            border: 1px solid rgba(0, 255, 136, 0.2);
-            color: #00ff88;
+            background: rgba(212, 168, 67, 0.06);
+            border: 1px solid rgba(212, 168, 67, 0.2);
+            color: #d4a843;
             border-radius: 12px;
             padding: 14px 20px;
             margin-bottom: 20px;
@@ -643,19 +647,19 @@ $stock_bajo = $conn->query("SELECT COUNT(*) as t FROM producto WHERE stock<=5 AN
         }
 
         .modal-content {
-            background: #0d0d1a;
-            border: 1px solid #1a1a2e;
+            background: #111111;
+            border: 1px solid #252525;
             border-radius: 16px;
             color: #fff;
         }
 
         .modal-header {
-            border-bottom: 1px solid #1a1a2e;
+            border-bottom: 1px solid #252525;
             padding: 20px 24px;
         }
 
         .modal-footer {
-            border-top: 1px solid #1a1a2e;
+            border-top: 1px solid #252525;
             padding: 16px 24px;
         }
 
@@ -672,8 +676,8 @@ $stock_bajo = $conn->query("SELECT COUNT(*) as t FROM producto WHERE stock<=5 AN
 
         .form-control,
         .form-select {
-            background: #111120;
-            border: 1px solid #1a1a2e;
+            background: #181818;
+            border: 1px solid #252525;
             color: #fff;
             border-radius: 10px;
             padding: 10px 14px;
@@ -684,10 +688,10 @@ $stock_bajo = $conn->query("SELECT COUNT(*) as t FROM producto WHERE stock<=5 AN
 
         .form-control:focus,
         .form-select:focus {
-            background: #111120;
-            border-color: #00ff88;
+            background: #181818;
+            border-color: #d4a843;
             color: #fff;
-            box-shadow: 0 0 0 3px rgba(0, 255, 136, 0.08);
+            box-shadow: 0 0 0 3px rgba(212, 168, 67, 0.08);
             outline: none;
         }
 
@@ -696,17 +700,17 @@ $stock_bajo = $conn->query("SELECT COUNT(*) as t FROM producto WHERE stock<=5 AN
         }
 
         .form-select option {
-            background: #111120;
+            background: #181818;
         }
 
         .form-check-input:checked {
-            background-color: #00ff88;
-            border-color: #00ff88;
+            background-color: #d4a843;
+            border-color: #d4a843;
         }
 
         .btn-cancel {
             background: rgba(255, 255, 255, 0.05);
-            border: 1px solid #1a1a2e;
+            border: 1px solid #252525;
             color: #aaa;
             border-radius: 10px;
             padding: 10px 20px;
@@ -766,17 +770,17 @@ $stock_bajo = $conn->query("SELECT COUNT(*) as t FROM producto WHERE stock<=5 AN
             height: 80px;
             border-radius: 10px;
             overflow: hidden;
-            border: 2px solid #1a1a2e;
+            border: 2px solid #252525;
             cursor: pointer;
             transition: all 0.2s;
         }
 
         .img-galeria-item:hover {
-            border-color: #00ff88;
+            border-color: #d4a843;
         }
 
         .img-galeria-item.principal {
-            border-color: #00ff88;
+            border-color: #d4a843;
         }
 
         .img-galeria-item img {
@@ -790,7 +794,7 @@ $stock_bajo = $conn->query("SELECT COUNT(*) as t FROM producto WHERE stock<=5 AN
             bottom: 0;
             left: 0;
             right: 0;
-            background: rgba(0, 255, 136, 0.8);
+            background: rgba(212, 168, 67, 0.8);
             color: #000;
             font-size: 0.55rem;
             font-weight: 700;
@@ -819,7 +823,7 @@ $stock_bajo = $conn->query("SELECT COUNT(*) as t FROM producto WHERE stock<=5 AN
             width: 80px;
             height: 80px;
             border-radius: 10px;
-            border: 2px dashed #1a1a2e;
+            border: 2px dashed #252525;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -832,8 +836,8 @@ $stock_bajo = $conn->query("SELECT COUNT(*) as t FROM producto WHERE stock<=5 AN
         }
 
         .img-add-slot:hover {
-            border-color: #00ff88;
-            color: #00ff88;
+            border-color: #d4a843;
+            color: #d4a843;
         }
 
         .img-add-slot i {
@@ -845,7 +849,7 @@ $stock_bajo = $conn->query("SELECT COUNT(*) as t FROM producto WHERE stock<=5 AN
         }
 
         ::-webkit-scrollbar-thumb {
-            background: #1a1a2e;
+            background: #252525;
             border-radius: 2px;
         }
     </style>
@@ -857,7 +861,7 @@ $stock_bajo = $conn->query("SELECT COUNT(*) as t FROM producto WHERE stock<=5 AN
         <div class="sidebar-brand">
             <div class="brand-name">Gamer<span>Zone</span></div>
             <div class="brand-role <?= $es_super ? 'super' : '' ?>">
-                <?= $es_super ? '⭐ Super Administrador' : '👤 Administrador' ?></div>
+                <?= $es_super ? 'Super Administrador' : 'Administrador' ?></div>
         </div>
         <nav class="sidebar-nav">
             <div class="nav-section">Principal</div>
@@ -888,7 +892,7 @@ $stock_bajo = $conn->query("SELECT COUNT(*) as t FROM producto WHERE stock<=5 AN
     <div class="main">
         <div class="topbar">
             <div>
-                <div class="topbar-title"><i class="bi bi-box-seam" style="color:#00ff88"></i> <span>Productos</span>
+                <div class="topbar-title"><i class="bi bi-box-seam" style="color:#d4a843"></i> <span>Productos</span>
                 </div>
                 <div class="breadcrumb-nav"><a href="dashboard.php">Dashboard</a> / Productos</div>
             </div>
@@ -912,28 +916,28 @@ $stock_bajo = $conn->query("SELECT COUNT(*) as t FROM producto WHERE stock<=5 AN
 
             <div class="stats-row">
                 <div class="mini-stat">
-                    <div class="mini-stat-icon" style="background:rgba(0,255,136,0.1);">📦</div>
+                    <div class="mini-stat-icon" style="background:rgba(212,168,67,0.1);"><i class="bi bi-box-seam" style="color:#d4a843;font-size:1.1rem;"></i></div>
                     <div>
                         <div class="mini-stat-num"><?= $total_prods ?></div>
                         <div class="mini-stat-label">Total productos</div>
                     </div>
                 </div>
                 <div class="mini-stat">
-                    <div class="mini-stat-icon" style="background:rgba(59,130,246,0.1);">✅</div>
+                    <div class="mini-stat-icon" style="background:rgba(59,130,246,0.1);"><i class="bi bi-check-circle" style="color:#3b82f6;font-size:1.1rem;"></i></div>
                     <div>
                         <div class="mini-stat-num" style="color:#3b82f6"><?= $total_activos ?></div>
                         <div class="mini-stat-label">Activos</div>
                     </div>
                 </div>
                 <div class="mini-stat">
-                    <div class="mini-stat-icon" style="background:rgba(245,158,11,0.1);">⚠️</div>
+                    <div class="mini-stat-icon" style="background:rgba(245,158,11,0.1);"><i class="bi bi-exclamation-triangle" style="color:#f59e0b;font-size:1.1rem;"></i></div>
                     <div>
                         <div class="mini-stat-num" style="color:#f59e0b"><?= $stock_bajo ?></div>
                         <div class="mini-stat-label">Stock bajo (≤5)</div>
                     </div>
                 </div>
                 <div class="mini-stat">
-                    <div class="mini-stat-icon" style="background:rgba(168,85,247,0.1);">🏷️</div>
+                    <div class="mini-stat-icon" style="background:rgba(168,85,247,0.1);"><i class="bi bi-tags" style="color:#a855f7;font-size:1.1rem;"></i></div>
                     <div>
                         <div class="mini-stat-num" style="color:#a855f7">
                             <?= $conn->query("SELECT COUNT(*) as t FROM categoria")->fetch_assoc()['t'] ?></div>
@@ -945,9 +949,9 @@ $stock_bajo = $conn->query("SELECT COUNT(*) as t FROM producto WHERE stock<=5 AN
             <div class="table-card">
                 <div class="table-header">
                     <div class="table-title"><i class="bi bi-box-seam"
-                            style="color:#00ff88;margin-right:8px;"></i>Catálogo de Productos</div>
+                            style="color:#d4a843;margin-right:8px;"></i>Catálogo de Productos</div>
                     <div class="d-flex align-items-center gap-3">
-                        <input type="text" class="search-box" id="searchProd" placeholder="🔍  Buscar producto...">
+                        <input type="text" class="search-box" id="searchProd" placeholder="Buscar producto...">
                         <span style="font-size:0.78rem;color:#555;"><?= $total_prods ?>
                             producto<?= $total_prods != 1 ? 's' : '' ?></span>
                     </div>
@@ -985,11 +989,11 @@ $stock_bajo = $conn->query("SELECT COUNT(*) as t FROM producto WHERE stock<=5 AN
                                         <div class="prod-img-table">
                                             <?php if ($img): ?>
                                                 <img src="<?= $img ?>" alt="">
-                                            <?php else: ?>📦<?php endif; ?>
+                                            <?php else: ?><i class="bi bi-box" style="font-size:1.5rem;opacity:0.3;"></i><?php endif; ?>
                                         </div>
                                         <?php if ($cant_imgs > 1): ?>
                                             <span
-                                                style="background:rgba(0,255,136,0.08);border:1px solid rgba(0,255,136,0.15);color:#00ff88;border-radius:6px;padding:2px 6px;font-size:0.68rem;font-weight:700;">+<?= $cant_imgs - 1 ?></span>
+                                                style="background:rgba(212,168,67,0.08);border:1px solid rgba(212,168,67,0.15);color:#d4a843;border-radius:6px;padding:2px 6px;font-size:0.68rem;font-weight:700;">+<?= $cant_imgs - 1 ?></span>
                                         <?php endif; ?>
                                     </div>
                                 </td>
@@ -1000,7 +1004,7 @@ $stock_bajo = $conn->query("SELECT COUNT(*) as t FROM producto WHERE stock<=5 AN
                                         <?= htmlspecialchars($p['marca']) ?></div>
                                 </td>
                                 <td><span class="badge-cat"><?= htmlspecialchars($p['nombre_categoria']) ?></span></td>
-                                <td><strong style="color:#00ff88;">Bs. <?= number_format($p['precio'], 2) ?></strong></td>
+                                <td><strong style="color:#d4a843;">Bs. <?= number_format($p['precio'], 2) ?></strong></td>
                                 <td>
                                     <?php if ($p['stock'] > 10): ?><span class="stock-ok"><?= $p['stock'] ?> und.</span>
                                     <?php elseif ($p['stock'] > 0): ?><span class="stock-low"><?= $p['stock'] ?> und.</span>
@@ -1061,46 +1065,46 @@ $stock_bajo = $conn->query("SELECT COUNT(*) as t FROM producto WHERE stock<=5 AN
                     <div class="row g-4">
                         <div class="col-md-4">
                             <div id="verImgPrincipal"
-                                style="background:#111120;border:1px solid #1a1a2e;border-radius:14px;height:200px;display:flex;align-items:center;justify-content:center;font-size:5rem;overflow:hidden;margin-bottom:10px;">
+                                style="background:#181818;border:1px solid #252525;border-radius:14px;height:200px;display:flex;align-items:center;justify-content:center;font-size:5rem;overflow:hidden;margin-bottom:10px;">
                                 <img id="verImgMain" src=""
                                     style="width:100%;height:100%;object-fit:contain;padding:12px;display:none;">
-                                <span id="verImgEmoji">📦</span>
+                                <i class="bi bi-box" id="verImgEmoji" style="font-size:3rem;opacity:0.3;"></i>
                             </div>
                             <div id="verGaleria" class="img-galeria"></div>
                         </div>
                         <div class="col-md-8">
                             <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-                                <div style="background:#111120;border-radius:10px;padding:14px;">
+                                <div style="background:#181818;border-radius:10px;padding:14px;">
                                     <div
                                         style="font-size:0.7rem;color:#444;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">
                                         Nombre</div>
                                     <div id="verNombre" style="font-weight:700;font-size:0.9rem;"></div>
                                 </div>
-                                <div style="background:#111120;border-radius:10px;padding:14px;">
+                                <div style="background:#181818;border-radius:10px;padding:14px;">
                                     <div
                                         style="font-size:0.7rem;color:#444;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">
                                         Marca</div>
                                     <div id="verMarca" style="font-weight:700;font-size:0.9rem;"></div>
                                 </div>
-                                <div style="background:#111120;border-radius:10px;padding:14px;">
+                                <div style="background:#181818;border-radius:10px;padding:14px;">
                                     <div
                                         style="font-size:0.7rem;color:#444;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">
                                         Categoría</div>
-                                    <div id="verCat" style="font-weight:700;font-size:0.9rem;color:#00ff88;"></div>
+                                    <div id="verCat" style="font-weight:700;font-size:0.9rem;color:#d4a843;"></div>
                                 </div>
-                                <div style="background:#111120;border-radius:10px;padding:14px;">
+                                <div style="background:#181818;border-radius:10px;padding:14px;">
                                     <div
                                         style="font-size:0.7rem;color:#444;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">
                                         Precio</div>
-                                    <div id="verPrecio" style="font-weight:800;font-size:1.1rem;color:#00ff88;"></div>
+                                    <div id="verPrecio" style="font-weight:800;font-size:1.1rem;color:#d4a843;"></div>
                                 </div>
-                                <div style="background:#111120;border-radius:10px;padding:14px;">
+                                <div style="background:#181818;border-radius:10px;padding:14px;">
                                     <div
                                         style="font-size:0.7rem;color:#444;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">
                                         Stock</div>
                                     <div id="verStock"></div>
                                 </div>
-                                <div style="background:#111120;border-radius:10px;padding:14px;">
+                                <div style="background:#181818;border-radius:10px;padding:14px;">
                                     <div
                                         style="font-size:0.7rem;color:#444;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">
                                         Estado</div>
@@ -1109,7 +1113,7 @@ $stock_bajo = $conn->query("SELECT COUNT(*) as t FROM producto WHERE stock<=5 AN
                             </div>
                         </div>
                         <div class="col-12">
-                            <div style="background:#111120;border-radius:10px;padding:16px;">
+                            <div style="background:#181818;border-radius:10px;padding:16px;">
                                 <div
                                     style="font-size:0.7rem;color:#444;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">
                                     Descripción</div>
@@ -1130,7 +1134,7 @@ $stock_bajo = $conn->query("SELECT COUNT(*) as t FROM producto WHERE stock<=5 AN
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" style="color:#00ff88;font-weight:700;"><i
+                    <h5 class="modal-title" style="color:#d4a843;font-weight:700;"><i
                             class="bi bi-plus-circle me-2"></i>Nuevo Producto</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
@@ -1318,7 +1322,7 @@ $stock_bajo = $conn->query("SELECT COUNT(*) as t FROM producto WHERE stock<=5 AN
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body" style="text-align:center;padding:32px 24px;">
-                    <div style="font-size:3.5rem;margin-bottom:16px;">🗑️</div>
+                    <div style="margin-bottom:16px;"><i class="bi bi-trash3" style="font-size:3.5rem;color:#ef4444;opacity:0.7;"></i></div>
                     <p style="font-size:0.95rem;margin-bottom:8px;">¿Eliminar el producto</p>
                     <p><strong id="elimNombre" style="color:#ef4444;font-size:1.05rem;"></strong>?</p>
                     <p style="color:#555;font-size:0.82rem;margin-top:12px;">Se eliminarán también todas las imágenes
@@ -1350,14 +1354,14 @@ $stock_bajo = $conn->query("SELECT COUNT(*) as t FROM producto WHERE stock<=5 AN
             const stock = parseInt(btn.dataset.stock);
             const stockEl = document.getElementById('verStock');
             stockEl.innerHTML = stock > 10
-                ? `<span style="color:#00ff88;">${stock} unidades</span>`
+                ? `<span style="color:#d4a843;">${stock} unidades</span>`
                 : stock > 0
-                    ? `<span style="color:#f59e0b;">⚠️ ${stock} unidades</span>`
+                    ? `<span style="color:#f59e0b;">${stock} unidades (bajo)</span>`
                     : `<span style="color:#ef4444;">Agotado</span>`;
 
             document.getElementById('verEstado').innerHTML = btn.dataset.estado == 1
-                ? '<span style="background:rgba(0,255,136,0.1);color:#00ff88;border:1px solid rgba(0,255,136,0.2);border-radius:6px;padding:3px 10px;font-size:0.78rem;font-weight:600;">Activo</span>'
-                : '<span style="background:rgba(100,100,100,0.1);color:#555;border:1px solid #1a1a2e;border-radius:6px;padding:3px 10px;font-size:0.78rem;font-weight:600;">Inactivo</span>';
+                ? '<span style="background:rgba(212,168,67,0.1);color:#d4a843;border:1px solid rgba(212,168,67,0.2);border-radius:6px;padding:3px 10px;font-size:0.78rem;font-weight:600;">Activo</span>'
+                : '<span style="background:rgba(100,100,100,0.1);color:#555;border:1px solid #252525;border-radius:6px;padding:3px 10px;font-size:0.78rem;font-weight:600;">Inactivo</span>';
 
             // Galería en modal ver
             const imgs = JSON.parse(btn.dataset.imgs || '[]');

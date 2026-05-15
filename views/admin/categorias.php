@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 session_start();
 if(!isset($_SESSION['usuario_id']) || !in_array($_SESSION['usuario_rol'], ['admin','super_admin'])) {
     header('Location: ../auth/login.php'); exit;
@@ -58,10 +58,10 @@ $total_cats = $conn->query("SELECT COUNT(*) as total FROM categoria")->fetch_ass
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: #070711; color: #fff; font-family: 'Inter', sans-serif; }
-        .sidebar { position: fixed; left: 0; top: 0; bottom: 0; width: 260px; background: #0d0d1a; border-right: 1px solid #1a1a2e; display: flex; flex-direction: column; z-index: 100; }
-        .sidebar-brand { padding: 24px 20px; border-bottom: 1px solid #1a1a2e; }
-        .brand-name { font-size: 1.5rem; font-weight: 800; color: #00ff88; }
+        body { background: #080808; color: #fff; font-family: 'Inter', sans-serif; }
+        .sidebar { position: fixed; left: 0; top: 0; bottom: 0; width: 260px; background: #111111; border-right: 1px solid #252525; display: flex; flex-direction: column; z-index: 100; }
+        .sidebar-brand { padding: 24px 20px; border-bottom: 1px solid #252525; }
+        .brand-name { font-size: 1.5rem; font-weight: 800; color: #d4a843; }
         .brand-name span { color: #fff; }
         .brand-role { font-size: 0.75rem; color: #555; margin-top: 4px; }
         .brand-role.super { color: #a855f7; }
@@ -69,66 +69,66 @@ $total_cats = $conn->query("SELECT COUNT(*) as total FROM categoria")->fetch_ass
         .nav-section { padding: 8px 20px 4px; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 2px; color: #444; font-weight: 600; }
         .sidebar-link { display: flex; align-items: center; gap: 12px; padding: 11px 20px; color: #666; font-size: 0.9rem; font-weight: 500; text-decoration: none; transition: all 0.2s; border-left: 3px solid transparent; }
         .sidebar-link:hover { color: #fff; background: rgba(255,255,255,0.04); }
-        .sidebar-link.active { color: #00ff88; background: rgba(0,255,136,0.06); border-left-color: #00ff88; }
+        .sidebar-link.active { color: #d4a843; background: rgba(212,168,67,0.06); border-left-color: #d4a843; }
         .sidebar-link i { font-size: 1rem; width: 20px; }
-        .sidebar-footer { padding: 16px 20px; border-top: 1px solid #1a1a2e; }
+        .sidebar-footer { padding: 16px 20px; border-top: 1px solid #252525; }
         .user-info { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
-        .user-av { width: 34px; height: 34px; border-radius: 8px; background: rgba(0,255,136,0.1); border: 1px solid rgba(0,255,136,0.2); display: flex; align-items: center; justify-content: center; color: #00ff88; font-weight: 700; font-size: 0.85rem; }
+        .user-av { width: 34px; height: 34px; border-radius: 8px; background: rgba(212,168,67,0.1); border: 1px solid rgba(212,168,67,0.2); display: flex; align-items: center; justify-content: center; color: #d4a843; font-weight: 700; font-size: 0.85rem; }
         .user-name { font-size: 0.82rem; font-weight: 600; }
         .user-role { font-size: 0.7rem; color: #555; }
         .btn-logout { background: rgba(255,68,68,0.1); border: 1px solid rgba(255,68,68,0.2); color: #ff6b6b; border-radius: 8px; padding: 8px 16px; font-size: 0.82rem; font-weight: 600; cursor: pointer; transition: all 0.2s; width: 100%; }
         .btn-logout:hover { background: rgba(255,68,68,0.2); }
         .main { margin-left: 260px; min-height: 100vh; }
-        .topbar { background: #0d0d1a; border-bottom: 1px solid #1a1a2e; padding: 18px 32px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 50; }
+        .topbar { background: #111111; border-bottom: 1px solid #252525; padding: 18px 32px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 50; }
         .topbar-title { font-size: 1.1rem; font-weight: 700; }
-        .topbar-title span { color: #00ff88; }
+        .topbar-title span { color: #d4a843; }
         .breadcrumb-nav { font-size: 0.75rem; color: #444; margin-top: 2px; }
         .breadcrumb-nav a { color: #555; text-decoration: none; }
-        .breadcrumb-nav a:hover { color: #00ff88; }
+        .breadcrumb-nav a:hover { color: #d4a843; }
         .content { padding: 32px; }
-        .btn-gamer { background: #00ff88; color: #000; font-weight: 700; border: none; border-radius: 10px; padding: 10px 20px; font-size: 0.875rem; transition: all 0.2s; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; }
-        .btn-gamer:hover { background: #00cc6a; transform: translateY(-1px); box-shadow: 0 4px 15px rgba(0,255,136,0.2); }
+        .btn-gamer { background: #d4a843; color: #000; font-weight: 700; border: none; border-radius: 10px; padding: 10px 20px; font-size: 0.875rem; transition: all 0.2s; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; }
+        .btn-gamer:hover { background: #c89a30; transform: translateY(-1px); box-shadow: 0 4px 15px rgba(212,168,67,0.2); }
 
         /* STATS TOP */
         .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 28px; }
-        .mini-stat { background: #0d0d1a; border: 1px solid #1a1a2e; border-radius: 14px; padding: 20px; display: flex; align-items: center; gap: 16px; }
+        .mini-stat { background: #111111; border: 1px solid #252525; border-radius: 14px; padding: 20px; display: flex; align-items: center; gap: 16px; }
         .mini-stat-icon { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0; }
-        .mini-stat-num { font-size: 1.6rem; font-weight: 800; color: #00ff88; }
+        .mini-stat-num { font-size: 1.6rem; font-weight: 800; color: #d4a843; }
         .mini-stat-label { font-size: 0.78rem; color: #555; }
 
         /* TABLE CARD */
-        .table-card { background: #0d0d1a; border: 1px solid #1a1a2e; border-radius: 16px; overflow: hidden; }
-        .table-header { padding: 20px 24px; border-bottom: 1px solid #1a1a2e; display: flex; justify-content: space-between; align-items: center; }
+        .table-card { background: #111111; border: 1px solid #252525; border-radius: 16px; overflow: hidden; }
+        .table-header { padding: 20px 24px; border-bottom: 1px solid #252525; display: flex; justify-content: space-between; align-items: center; }
         .table-title { font-size: 0.95rem; font-weight: 700; }
-        .table-title i { color: #00ff88; margin-right: 8px; }
+        .table-title i { color: #d4a843; margin-right: 8px; }
         table { width: 100%; border-collapse: collapse; }
-        thead th { padding: 12px 24px; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 1px; color: #444; font-weight: 600; border-bottom: 1px solid #1a1a2e; background: #0a0a14; text-align: left; }
+        thead th { padding: 12px 24px; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 1px; color: #444; font-weight: 600; border-bottom: 1px solid #252525; background: #0a0a14; text-align: left; }
         tbody td { padding: 16px 24px; border-bottom: 1px solid #0f0f1f; font-size: 0.875rem; }
         tbody tr:hover { background: rgba(255,255,255,0.02); }
         tbody tr:last-child td { border-bottom: none; }
 
         /* CAT BADGE */
-        .cat-icon-box { width: 40px; height: 40px; border-radius: 10px; background: rgba(0,255,136,0.08); border: 1px solid rgba(0,255,136,0.15); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
+        .cat-icon-box { width: 40px; height: 40px; border-radius: 10px; background: rgba(212,168,67,0.08); border: 1px solid rgba(212,168,67,0.15); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
         .cat-name { font-weight: 600; font-size: 0.9rem; }
         .cat-desc { font-size: 0.78rem; color: #555; margin-top: 2px; }
-        .prod-count { background: rgba(0,255,136,0.08); border: 1px solid rgba(0,255,136,0.15); color: #00ff88; border-radius: 8px; padding: 4px 12px; font-size: 0.78rem; font-weight: 600; display: inline-block; }
+        .prod-count { background: rgba(212,168,67,0.08); border: 1px solid rgba(212,168,67,0.15); color: #d4a843; border-radius: 8px; padding: 4px 12px; font-size: 0.78rem; font-weight: 600; display: inline-block; }
         .empty-state { text-align: center; padding: 60px 24px; color: #444; }
         .empty-state i { font-size: 3rem; display: block; margin-bottom: 16px; opacity: 0.3; }
 
         /* ALERTS */
-        .alert-ok { background: rgba(0,255,136,0.06); border: 1px solid rgba(0,255,136,0.2); color: #00ff88; border-radius: 12px; padding: 14px 20px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+        .alert-ok { background: rgba(212,168,67,0.06); border: 1px solid rgba(212,168,67,0.2); color: #d4a843; border-radius: 12px; padding: 14px 20px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
         .alert-err { background: rgba(239,68,68,0.06); border: 1px solid rgba(239,68,68,0.2); color: #ef4444; border-radius: 12px; padding: 14px 20px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
 
         /* MODAL */
-        .modal-content { background: #0d0d1a; border: 1px solid #1a1a2e; border-radius: 16px; color: #fff; }
-        .modal-header { border-bottom: 1px solid #1a1a2e; padding: 20px 24px; }
-        .modal-footer { border-top: 1px solid #1a1a2e; padding: 16px 24px; }
+        .modal-content { background: #111111; border: 1px solid #252525; border-radius: 16px; color: #fff; }
+        .modal-header { border-bottom: 1px solid #252525; padding: 20px 24px; }
+        .modal-footer { border-top: 1px solid #252525; padding: 16px 24px; }
         .modal-body { padding: 24px; }
         .form-label { font-size: 0.82rem; font-weight: 600; color: #aaa; margin-bottom: 6px; }
-        .form-control, .form-select { background: #111120; border: 1px solid #1a1a2e; color: #fff; border-radius: 10px; padding: 10px 14px; font-size: 0.875rem; transition: border-color 0.2s; }
-        .form-control:focus, .form-select:focus { background: #111120; border-color: #00ff88; color: #fff; box-shadow: 0 0 0 3px rgba(0,255,136,0.08); }
+        .form-control, .form-select { background: #181818; border: 1px solid #252525; color: #fff; border-radius: 10px; padding: 10px 14px; font-size: 0.875rem; transition: border-color 0.2s; }
+        .form-control:focus, .form-select:focus { background: #181818; border-color: #d4a843; color: #fff; box-shadow: 0 0 0 3px rgba(212,168,67,0.08); }
         .form-control::placeholder { color: #333; }
-        .btn-cancel { background: rgba(255,255,255,0.05); border: 1px solid #1a1a2e; color: #aaa; border-radius: 10px; padding: 10px 20px; font-size: 0.875rem; cursor: pointer; transition: all 0.2s; }
+        .btn-cancel { background: rgba(255,255,255,0.05); border: 1px solid #252525; color: #aaa; border-radius: 10px; padding: 10px 20px; font-size: 0.875rem; cursor: pointer; transition: all 0.2s; }
         .btn-cancel:hover { background: rgba(255,255,255,0.08); color: #fff; }
         .btn-danger-custom { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.2); color: #ef4444; border-radius: 10px; padding: 10px 20px; font-size: 0.875rem; font-weight: 600; cursor: pointer; transition: all 0.2s; }
         .btn-danger-custom:hover { background: rgba(239,68,68,0.2); }
@@ -141,12 +141,12 @@ $total_cats = $conn->query("SELECT COUNT(*) as total FROM categoria")->fetch_ass
         .icon-btn-del { border-color: rgba(239,68,68,0.3); color: #ef4444; }
         .icon-btn-del:hover { background: rgba(239,68,68,0.1); }
         ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-thumb { background: #1a1a2e; border-radius: 2px; }
+        ::-webkit-scrollbar-thumb { background: #252525; border-radius: 2px; }
 
         /* ICONS MAP */
         .cat-icons { display: grid; grid-template-columns: repeat(6,1fr); gap: 8px; }
-        .cat-icon-opt { background: #111120; border: 1px solid #1a1a2e; border-radius: 8px; padding: 10px; text-align: center; font-size: 1.4rem; cursor: pointer; transition: all 0.2s; }
-        .cat-icon-opt:hover, .cat-icon-opt.selected { border-color: #00ff88; background: rgba(0,255,136,0.06); }
+        .cat-icon-opt { background: #181818; border: 1px solid #252525; border-radius: 8px; padding: 10px; text-align: center; font-size: 1.4rem; cursor: pointer; transition: all 0.2s; }
+        .cat-icon-opt:hover, .cat-icon-opt.selected { border-color: #d4a843; background: rgba(212,168,67,0.06); }
     </style>
 </head>
 <body>
@@ -156,7 +156,7 @@ $total_cats = $conn->query("SELECT COUNT(*) as total FROM categoria")->fetch_ass
     <div class="sidebar-brand">
         <div class="brand-name">Gamer<span>Zone</span></div>
         <div class="brand-role <?= $es_super ? 'super' : '' ?>">
-            <?= $es_super ? '⭐ Super Administrador' : '👤 Administrador' ?>
+            <?= $es_super ? 'Super Administrador' : 'Administrador' ?>
         </div>
     </div>
     <nav class="sidebar-nav">
@@ -189,7 +189,7 @@ $total_cats = $conn->query("SELECT COUNT(*) as total FROM categoria")->fetch_ass
 <div class="main">
     <div class="topbar">
         <div>
-            <div class="topbar-title"><i class="bi bi-tags" style="color:#00ff88"></i> <span>Categorías</span></div>
+            <div class="topbar-title"><i class="bi bi-tags" style="color:#d4a843"></i> <span>Categorías</span></div>
             <div class="breadcrumb-nav"><a href="dashboard.php">Dashboard</a> / Categorías</div>
         </div>
         <button class="btn-gamer" data-bs-toggle="modal" data-bs-target="#modalCrear">
@@ -208,21 +208,21 @@ $total_cats = $conn->query("SELECT COUNT(*) as total FROM categoria")->fetch_ass
         <!-- MINI STATS -->
         <div class="stats-row">
             <div class="mini-stat">
-                <div class="mini-stat-icon" style="background:rgba(0,255,136,0.1);">🏷️</div>
+                <div class="mini-stat-icon" style="background:rgba(212,168,67,0.1);"><i class="bi bi-tags" style="color:#d4a843;font-size:1.1rem;"></i></div>
                 <div>
                     <div class="mini-stat-num"><?= $total_cats ?></div>
                     <div class="mini-stat-label">Categorías totales</div>
                 </div>
             </div>
             <div class="mini-stat">
-                <div class="mini-stat-icon" style="background:rgba(59,130,246,0.1);">📦</div>
+                <div class="mini-stat-icon" style="background:rgba(59,130,246,0.1);"><i class="bi bi-box-seam" style="color:#3b82f6;font-size:1.1rem;"></i></div>
                 <div>
                     <div class="mini-stat-num" style="color:#3b82f6"><?= $conn->query("SELECT COUNT(*) as t FROM producto WHERE estado=1")->fetch_assoc()['t'] ?></div>
                     <div class="mini-stat-label">Productos activos</div>
                 </div>
             </div>
             <div class="mini-stat">
-                <div class="mini-stat-icon" style="background:rgba(168,85,247,0.1);">📊</div>
+                <div class="mini-stat-icon" style="background:rgba(168,85,247,0.1);"><i class="bi bi-bar-chart" style="color:#a855f7;font-size:1.1rem;"></i></div>
                 <div>
                     <div class="mini-stat-num" style="color:#a855f7"><?= $total_cats > 0 ? round($conn->query("SELECT COUNT(*) as t FROM producto")->fetch_assoc()['t'] / $total_cats, 1) : 0 ?></div>
                     <div class="mini-stat-label">Productos por categoría</div>
@@ -247,7 +247,7 @@ $total_cats = $conn->query("SELECT COUNT(*) as total FROM categoria")->fetch_ass
                 </thead>
                 <tbody>
                 <?php
-                $icons = ['💻','🖥️','🖱️','⌨️','🎮','🎧','📱','🖨️','💾','🔌'];
+                $icons = ['bi-laptop','bi-display','bi-mouse','bi-keyboard','bi-controller','bi-headset','bi-phone','bi-printer','bi-device-hdd','bi-plug'];
                 $i = 0;
                 if($categorias->num_rows === 0): ?>
                 <tr><td colspan="4"><div class="empty-state"><i class="bi bi-tags"></i>No hay categorías aún</div></td></tr>
@@ -255,7 +255,7 @@ $total_cats = $conn->query("SELECT COUNT(*) as total FROM categoria")->fetch_ass
                 <tr>
                     <td>
                         <div style="display:flex;align-items:center;gap:12px;">
-                            <div class="cat-icon-box"><?= $icons[$i % count($icons)] ?></div>
+                            <div class="cat-icon-box"><i class="bi <?= $icons[$i % count($icons)] ?>"></i></div>
                             <div>
                                 <div class="cat-name"><?= htmlspecialchars($cat['nombre_categoria']) ?></div>
                                 <div style="font-size:0.7rem;color:#444;">ID #<?= $cat['id_categoria'] ?></div>
@@ -297,7 +297,7 @@ $total_cats = $conn->query("SELECT COUNT(*) as total FROM categoria")->fetch_ass
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" style="color:#00ff88;font-weight:700;"><i class="bi bi-plus-circle me-2"></i>Nueva Categoría</h5>
+                <h5 class="modal-title" style="color:#d4a843;font-weight:700;"><i class="bi bi-plus-circle me-2"></i>Nueva Categoría</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <form method="POST">
@@ -361,7 +361,7 @@ $total_cats = $conn->query("SELECT COUNT(*) as total FROM categoria")->fetch_ass
             </div>
             <div class="modal-body">
                 <div style="text-align:center;padding:16px 0;">
-                    <div style="font-size:3rem;margin-bottom:16px;">🗑️</div>
+                    <div style="margin-bottom:16px;"><i class="bi bi-trash3" style="font-size:3rem;color:#ef4444;opacity:0.7;"></i></div>
                     <p style="font-size:0.95rem;">¿Estás seguro de eliminar la categoría</p>
                     <p><strong id="elimNombre" style="color:#ef4444;font-size:1.1rem;"></strong>?</p>
                     <p id="elimWarning" style="color:#f59e0b;font-size:0.82rem;margin-top:12px;display:none;">
