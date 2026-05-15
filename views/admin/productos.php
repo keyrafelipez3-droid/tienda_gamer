@@ -78,8 +78,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Eliminar imágenes marcadas para eliminar
             if (!empty($_POST['eliminar_imagen'])) {
                 foreach ($_POST['eliminar_imagen'] as $id_img) {
+                    $id_img_int = intval($id_img);
                     $del = $conn->prepare("DELETE FROM producto_imagen WHERE id_imagen=? AND id_producto=?");
-                    $del->bind_param("ii", intval($id_img), $id);
+                    $del->bind_param("ii", $id_img_int, $id);
                     $del->execute();
                 }
             }
