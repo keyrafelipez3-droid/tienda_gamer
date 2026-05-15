@@ -859,6 +859,16 @@ function imgSrc($img, $prefix = '../../assets/')
                                     <td style="color:#555;font-size:0.8rem;"><?= date('d/m/Y H:i', strtotime($v['fecha'])) ?>
                                     </td>
                                     <td><strong style="color:#d4a843;">Bs. <?= number_format($v['total'], 2) ?></strong></td>
+                                    <td>
+                                        <?php
+                                        $pay_icons = ['qr'=>'bi-qr-code','tarjeta'=>'bi-credit-card','transferencia'=>'bi-bank','tigo_money'=>'bi-phone','paypal'=>'bi-paypal','mercadopago'=>'bi-wallet2','stripe'=>'bi-lightning-charge','payu'=>'bi-globe','payoneer'=>'bi-send','wise'=>'bi-arrow-left-right'];
+                                        $pay_names = ['qr'=>'QR','tarjeta'=>'Tarjeta','transferencia'=>'Transf.','tigo_money'=>'Tigo','paypal'=>'PayPal','mercadopago'=>'MercadoPago','stripe'=>'Stripe','payu'=>'PayU','payoneer'=>'Payoneer','wise'=>'Wise'];
+                                        $mp = $v['metodo_pago'] ?? 'qr';
+                                        ?>
+                                        <span style="display:inline-flex;align-items:center;gap:4px;font-size:0.72rem;color:#888;">
+                                            <i class="bi <?= $pay_icons[$mp] ?? 'bi-cash' ?>"></i><?= $pay_names[$mp] ?? $mp ?>
+                                        </span>
+                                    </td>
                                     <td><span class="status-<?= $v['estado_venta'] ?>"><?= $v['estado_venta'] ?></span></td>
                                     <td>
                                         <div style="display:flex;gap:6px;">

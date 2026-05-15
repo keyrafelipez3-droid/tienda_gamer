@@ -44,6 +44,10 @@ if (isset($_POST['vaciar'])) {
 // Confirmar compra
 if (isset($_POST['confirmar_compra']) && !empty($_SESSION['carrito'])) {
     $id_usuario = $_SESSION['usuario_id'];
+    $metodo_pago = $_POST['metodo_pago'] ?? 'qr';
+    $metodos_validos = ['qr','tarjeta','transferencia','paypal','stripe','mercadopago','payu','tigo_money','payoneer','wise'];
+    if (!in_array($metodo_pago, $metodos_validos)) $metodo_pago = 'qr';
+
     $total = 0;
     $items = [];
 
@@ -60,8 +64,8 @@ if (isset($_POST['confirmar_compra']) && !empty($_SESSION['carrito'])) {
     }
 
     if ($total > 0) {
-        $v = $conn->prepare("INSERT INTO venta (id_usuario, total) VALUES (?,?)");
-        $v->bind_param("id", $id_usuario, $total);
+        $v = $conn->prepare("INSERT INTO venta (id_usuario, total, metodo_pago) VALUES (?,?,?)");
+        $v->bind_param("ids", $id_usuario, $total, $metodo_pago);
         $v->execute();
         $id_venta = $conn->insert_id;
 
@@ -500,6 +504,22 @@ function imgSrc($img, $prefix = '../../assets/')
             color: #d4a843;
         }
 
+        /* MÉTODOS DE PAGO */
+        .pay-section { margin-bottom: 16px; }
+        .pay-title { font-size: 0.78rem; font-weight: 700; color: #aaa; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+        .pay-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 16px; }
+        .pay-opt {
+            background: #181818; border: 1.5px solid #252525; border-radius: 10px;
+            padding: 8px 4px; cursor: pointer; transition: all .18s;
+            display: flex; flex-direction: column; align-items: center; gap: 4px;
+        }
+        .pay-opt i { font-size: 1.2rem; color: #555; transition: color .18s; }
+        .pay-opt span { font-size: 0.58rem; color: #555; text-align: center; line-height: 1.2; transition: color .18s; }
+        .pay-opt:hover { border-color: rgba(212,168,67,.4); background: rgba(212,168,67,.04); }
+        .pay-opt:hover i, .pay-opt:hover span { color: #d4a843; }
+        .pay-opt.active { border-color: #d4a843; background: rgba(212,168,67,.08); }
+        .pay-opt.active i, .pay-opt.active span { color: #d4a843; }
+
         .toast-container {
             position: fixed;
             bottom: 24px;
@@ -666,20 +686,57 @@ function imgSrc($img, $prefix = '../../assets/')
                                 <span class="label">Total</span>
                                 <span class="value">Bs. <?= number_format($total, 2) ?></span>
                             </div>
-                            <form method="POST">
-                                <button type="submit" name="confirmar_compra" class="btn-checkout">
-                                    <i class="bi bi-bag-check-fill"></i> Confirmar Compra
-                                </button>
-                            </form>
+                            <!-- MÉTODOS DE PAGO -->
+                            <div class="pay-section">
+                                <div class="pay-title"><i class="bi bi-credit-card-2-front me-2"></i>Método de pago</div>
+                                <form method="POST" id="checkoutForm">
+                                    <input type="hidden" name="metodo_pago" id="metodo_pago_input" value="qr">
+                                    <div class="pay-grid">
+                                        <div class="pay-opt active" data-val="qr" onclick="selPago(this)">
+                                            <i class="bi bi-qr-code"></i><span>QR Bolivia</span>
+                                        </div>
+                                        <div class="pay-opt" data-val="tarjeta" onclick="selPago(this)">
+                                            <i class="bi bi-credit-card"></i><span>Tarjeta</span>
+                                        </div>
+                                        <div class="pay-opt" data-val="transferencia" onclick="selPago(this)">
+                                            <i class="bi bi-bank"></i><span>Transferencia</span>
+                                        </div>
+                                        <div class="pay-opt" data-val="tigo_money" onclick="selPago(this)">
+                                            <i class="bi bi-phone"></i><span>Tigo Money</span>
+                                        </div>
+                                        <div class="pay-opt" data-val="paypal" onclick="selPago(this)">
+                                            <i class="bi bi-paypal"></i><span>PayPal</span>
+                                        </div>
+                                        <div class="pay-opt" data-val="mercadopago" onclick="selPago(this)">
+                                            <i class="bi bi-wallet2"></i><span>MercadoPago</span>
+                                        </div>
+                                        <div class="pay-opt" data-val="stripe" onclick="selPago(this)">
+                                            <i class="bi bi-lightning-charge"></i><span>Stripe</span>
+                                        </div>
+                                        <div class="pay-opt" data-val="payu" onclick="selPago(this)">
+                                            <i class="bi bi-globe"></i><span>PayU</span>
+                                        </div>
+                                        <div class="pay-opt" data-val="payoneer" onclick="selPago(this)">
+                                            <i class="bi bi-send"></i><span>Payoneer</span>
+                                        </div>
+                                        <div class="pay-opt" data-val="wise" onclick="selPago(this)">
+                                            <i class="bi bi-arrow-left-right"></i><span>Wise</span>
+                                        </div>
+                                    </div>
+                                    <button type="submit" name="confirmar_compra" class="btn-checkout">
+                                        <i class="bi bi-bag-check-fill"></i> Confirmar Compra
+                                    </button>
+                                </form>
+                            </div>
                             <form method="POST">
                                 <button type="submit" name="vaciar" class="btn-clear">
                                     <i class="bi bi-trash me-1"></i>Vaciar carrito
                                 </button>
                             </form>
                             <div class="secure-badges">
-                                <div class="secure-badge"><i class="bi bi-shield-lock"></i>Pago seguro</div>
+                                <div class="secure-badge"><i class="bi bi-shield-lock"></i>Pago seguro SSL</div>
                                 <div class="secure-badge"><i class="bi bi-truck"></i>Envío gratis</div>
-                                <div class="secure-badge"><i class="bi bi-arrow-counterclockwise"></i>Garantía</div>
+                                <div class="secure-badge"><i class="bi bi-arrow-counterclockwise"></i>Garantía 12m</div>
                             </div>
                         </div>
                     </div>
@@ -692,6 +749,12 @@ function imgSrc($img, $prefix = '../../assets/')
     <script>
         const toast = document.getElementById('toastMsg');
         if (toast) setTimeout(() => { toast.style.transition = 'opacity 0.5s'; toast.style.opacity = '0'; }, 3000);
+
+        function selPago(el) {
+            document.querySelectorAll('.pay-opt').forEach(o => o.classList.remove('active'));
+            el.classList.add('active');
+            document.getElementById('metodo_pago_input').value = el.dataset.val;
+        }
     </script>
 </body>
 

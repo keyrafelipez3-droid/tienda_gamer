@@ -342,6 +342,14 @@ function imgSrc($img, $prefix='../../assets/') {
                     </div>
                 </div>
                 <div class="d-flex align-items-center gap-3 flex-wrap">
+                    <?php
+                    $pay_labels = ['qr'=>['QR Bolivia','bi-qr-code'],'tarjeta'=>['Tarjeta','bi-credit-card'],'transferencia'=>['Transferencia','bi-bank'],'tigo_money'=>['Tigo Money','bi-phone'],'paypal'=>['PayPal','bi-paypal'],'mercadopago'=>['MercadoPago','bi-wallet2'],'stripe'=>['Stripe','bi-lightning-charge'],'payu'=>['PayU','bi-globe'],'payoneer'=>['Payoneer','bi-send'],'wise'=>['Wise','bi-arrow-left-right']];
+                    $mp = $venta['metodo_pago'] ?? 'qr';
+                    $pl = $pay_labels[$mp] ?? ['Otro','bi-cash-coin'];
+                    ?>
+                    <span style="display:inline-flex;align-items:center;gap:5px;background:rgba(212,168,67,.07);border:1px solid rgba(212,168,67,.15);border-radius:8px;padding:4px 10px;font-size:0.72rem;color:#d4a843;">
+                        <i class="bi <?= $pl[1] ?>"></i><?= $pl[0] ?>
+                    </span>
                     <span class="status-badge status-<?= $venta['estado_venta'] ?>">
                         <?= $venta['estado_venta'] ?>
                     </span>
