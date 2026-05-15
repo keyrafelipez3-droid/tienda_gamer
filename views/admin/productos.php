@@ -989,7 +989,11 @@ $stock_bajo = $conn->query("SELECT COUNT(*) as t FROM producto WHERE stock<=5 AN
                                         <div class="prod-img-table">
                                             <?php if ($img): ?>
                                                 <img src="<?= $img ?>" alt="">
-                                            <?php else: ?><i class="bi bi-box" style="font-size:1.5rem;opacity:0.3;"></i><?php endif; ?>
+                                            <?php else: ?>
+                                                <div style="width:100%;height:100%;background:linear-gradient(135deg,#0d1520,#1a2030);display:flex;align-items:center;justify-content:center;border-radius:8px;">
+                                                    <i class="bi bi-image" style="font-size:1.3rem;color:#d4a843;opacity:0.4;"></i>
+                                                </div>
+                                            <?php endif; ?>
                                         </div>
                                         <?php if ($cant_imgs > 1): ?>
                                             <span

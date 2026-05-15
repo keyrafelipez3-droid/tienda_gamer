@@ -739,7 +739,22 @@ function imgSrc($img, $prefix = '../../assets/')
                                 <div class="prod-img">
                                     <?php if ($img_src): ?>
                                         <img src="<?= $img_src ?>" alt="<?= htmlspecialchars($p['nombre']) ?>">
-                                    <?php else: ?><i class="bi bi-box" style="font-size:2rem;opacity:0.3;"></i><?php endif; ?>
+                                    <?php else:
+                                        $cat_n = strtolower($p['nombre_categoria'] ?? '');
+                                        $ph_icon = 'bi-box-seam';
+                                        $ph_bg = 'linear-gradient(135deg,#0d1520,#1a2030)';
+                                        if (str_contains($cat_n,'laptop')||str_contains($cat_n,'portatil')) { $ph_icon='bi-laptop'; $ph_bg='linear-gradient(135deg,#0a0f1e,#1a1040)'; }
+                                        elseif (str_contains($cat_n,'monitor')) { $ph_icon='bi-display'; $ph_bg='linear-gradient(135deg,#0d1520,#1a2a3a)'; }
+                                        elseif (str_contains($cat_n,'mouse')||str_contains($cat_n,'raton')) { $ph_icon='bi-mouse'; $ph_bg='linear-gradient(135deg,#1a0d0d,#2a1020)'; }
+                                        elseif (str_contains($cat_n,'teclado')) { $ph_icon='bi-keyboard'; $ph_bg='linear-gradient(135deg,#0d1a0d,#1a2a10)'; }
+                                        elseif (str_contains($cat_n,'consola')) { $ph_icon='bi-controller'; $ph_bg='linear-gradient(135deg,#10101a,#1a1040)'; }
+                                        elseif (str_contains($cat_n,'headset')||str_contains($cat_n,'auricular')||str_contains($cat_n,'accesorio')) { $ph_icon='bi-headset'; $ph_bg='linear-gradient(135deg,#1a1200,#2a2010)'; }
+                                    ?>
+                                    <div style="position:absolute;inset:0;background:<?= $ph_bg ?>;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;">
+                                        <i class="bi <?= $ph_icon ?>" style="font-size:4rem;color:#d4a843;opacity:0.6;"></i>
+                                        <span style="font-size:0.65rem;color:rgba(212,168,67,0.4);text-transform:uppercase;letter-spacing:2px;"><?= htmlspecialchars($p['nombre_categoria'] ?? '') ?></span>
+                                    </div>
+                                    <?php endif; ?>
                                     <span
                                         class="prod-badge badge-<?= $badges[$bi % 3] ?>"><?= ucfirst($badges[$bi % 3]) ?></span>
                                     <form method="POST" style="position:absolute;top:12px;right:12px;"

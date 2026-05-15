@@ -2,6 +2,7 @@
 session_start();
 require_once 'config/db.php';
 $prod_destacados = $conn->query("SELECT p.*, c.nombre_categoria FROM producto p JOIN categoria c ON p.id_categoria=c.id_categoria WHERE p.estado=1 ORDER BY p.id_producto DESC LIMIT 4");
+$prod_hero = $conn->query("SELECT nombre, marca, precio, imagen, id_categoria FROM producto WHERE estado=1 AND imagen!='' AND imagen IS NOT NULL ORDER BY RAND() LIMIT 4");
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -66,13 +67,20 @@ $prod_destacados = $conn->query("SELECT p.*, c.nombre_categoria FROM producto p 
 
         /* HERO VISUAL */
         .hero-visual{position:relative;display:flex;align-items:center;justify-content:center;animation:fadeInRight 0.8s ease 0.3s both;}
-        .hero-circle{width:480px;height:480px;border-radius:50%;border:1px solid rgba(212,168,67,0.08);display:flex;align-items:center;justify-content:center;position:relative;animation:rotate 20s linear infinite;}
-        .hero-circle::before{content:'';position:absolute;inset:-20px;border-radius:50%;border:1px solid rgba(212,168,67,0.04);}
-        .hero-circle-inner{width:360px;height:360px;border-radius:50%;background:radial-gradient(circle,rgba(212,168,67,0.1) 0%,rgba(212,168,67,0.02) 50%,transparent 70%);display:flex;align-items:center;justify-content:center;font-size:10rem;filter:drop-shadow(0 0 40px rgba(212,168,67,0.4));animation:float 4s ease-in-out infinite,counterRotate 20s linear infinite;}
-        .orbit-item{position:absolute;width:48px;height:48px;border-radius:12px;background:var(--bg2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:1.4rem;animation:counterRotate 20s linear infinite;}
-        @keyframes rotate{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
-        @keyframes counterRotate{from{transform:rotate(0deg);}to{transform:rotate(-360deg);}}
-        @keyframes float{0%,100%{transform:translateY(0) rotate(0deg);}50%{transform:translateY(-20px) rotate(0deg);}}
+        .hero-products-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;max-width:460px;}
+        .hero-prod-card{background:var(--bg2);border:1px solid var(--border);border-radius:16px;overflow:hidden;transition:transform 0.3s;}
+        .hero-prod-card:nth-child(1){animation:float 4s ease-in-out infinite;}
+        .hero-prod-card:nth-child(2){animation:float 4s ease-in-out 1s infinite;}
+        .hero-prod-card:nth-child(3){animation:float 4s ease-in-out 0.5s infinite;}
+        .hero-prod-card:nth-child(4){animation:float 4s ease-in-out 1.5s infinite;}
+        .hero-prod-card:hover{transform:translateY(-6px) scale(1.02);border-color:rgba(212,168,67,0.4);}
+        .hero-prod-img{height:140px;overflow:hidden;background:var(--bg3);display:flex;align-items:center;justify-content:center;}
+        .hero-prod-img img{width:100%;height:100%;object-fit:cover;transition:transform 0.4s;}
+        .hero-prod-card:hover .hero-prod-img img{transform:scale(1.08);}
+        .hero-prod-body{padding:12px 14px;}
+        .hero-prod-nombre{font-size:0.78rem;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+        .hero-prod-precio{font-family:'Rajdhani',sans-serif;font-size:1rem;font-weight:700;color:var(--green);margin-top:2px;}
+        @keyframes float{0%,100%{transform:translateY(0);}50%{transform:translateY(-12px);}}
         @keyframes fadeInUp{from{opacity:0;transform:translateY(30px);}to{opacity:1;transform:translateY(0);}}
         @keyframes fadeInDown{from{opacity:0;transform:translateY(-20px);}to{opacity:1;transform:translateY(0);}}
         @keyframes fadeInRight{from{opacity:0;transform:translateX(40px);}to{opacity:1;transform:translateX(0);}}
@@ -87,7 +95,7 @@ $prod_destacados = $conn->query("SELECT p.*, c.nombre_categoria FROM producto p 
         /* ── CATEGORÍAS ── */
         .bg2{background:var(--bg2);}
         .cat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
-        .cat-card{border-radius:20px;overflow:hidden;position:relative;height:180px;cursor:pointer;transition:all 0.4s;text-decoration:none;display:block;}
+        .cat-card{border-radius:20px;overflow:hidden;position:relative;height:200px;cursor:pointer;transition:all 0.4s;text-decoration:none;display:block;}
         .cat-card:hover{transform:translateY(-6px);box-shadow:0 20px 60px rgba(0,0,0,0.5);}
         .cat-card:hover .cat-overlay{opacity:0.5;}
         .cat-card:hover .cat-content{transform:translateY(-4px);}
@@ -246,12 +254,39 @@ $prod_destacados = $conn->query("SELECT p.*, c.nombre_categoria FROM producto p 
             </div>
             <div class="col-lg-6 d-none d-lg-block">
                 <div class="hero-visual">
-                    <div class="hero-circle">
-                        <div class="hero-circle-inner"><i class="bi bi-controller" style="font-size:10rem;color:#d4a843;filter:drop-shadow(0 0 40px rgba(212,168,67,0.4));"></i></div>
-                        <div class="orbit-item" style="top:10%;left:50%;transform:translateX(-50%);"><i class="bi bi-laptop" style="color:#d4a843;"></i></div>
-                        <div class="orbit-item" style="top:50%;right:-24px;transform:translateY(-50%);"><i class="bi bi-display" style="color:#d4a843;"></i></div>
-                        <div class="orbit-item" style="bottom:10%;left:50%;transform:translateX(-50%);"><i class="bi bi-headset" style="color:#d4a843;"></i></div>
-                        <div class="orbit-item" style="top:50%;left:-24px;transform:translateY(-50%);"><i class="bi bi-mouse" style="color:#d4a843;"></i></div>
+                    <div class="hero-products-grid">
+                        <?php
+                        $hero_icons = ['bi-laptop','bi-display','bi-mouse','bi-controller'];
+                        $hero_idx = 0;
+                        if ($prod_hero && $prod_hero->num_rows > 0):
+                            while ($hp = $prod_hero->fetch_assoc()):
+                                $hp_img = !empty($hp['imagen']) ? ((strpos($hp['imagen'],'http')===0) ? $hp['imagen'] : 'assets/'.$hp['imagen']) : null;
+                        ?>
+                        <div class="hero-prod-card">
+                            <div class="hero-prod-img">
+                                <?php if ($hp_img): ?>
+                                    <img src="<?= htmlspecialchars($hp_img) ?>" alt="<?= htmlspecialchars($hp['nombre']) ?>">
+                                <?php else: ?>
+                                    <i class="bi <?= $hero_icons[$hero_idx % 4] ?>" style="font-size:3.5rem;color:#d4a843;opacity:0.5;"></i>
+                                <?php endif; ?>
+                            </div>
+                            <div class="hero-prod-body">
+                                <div class="hero-prod-nombre"><?= htmlspecialchars($hp['nombre']) ?></div>
+                                <div class="hero-prod-precio">Bs. <?= number_format($hp['precio'],2) ?></div>
+                            </div>
+                        </div>
+                        <?php $hero_idx++; endwhile;
+                        else:
+                            $fallback = [['bi-laptop','Laptop Gamer','Bs. 7,500'],['bi-display','Monitor 144Hz','Bs. 2,800'],['bi-mouse','Mouse Pro','Bs. 450'],['bi-controller','Consola Gaming','Bs. 4,200']];
+                            foreach ($fallback as $f): ?>
+                        <div class="hero-prod-card">
+                            <div class="hero-prod-img"><i class="bi <?= $f[0] ?>" style="font-size:3.5rem;color:#d4a843;opacity:0.5;"></i></div>
+                            <div class="hero-prod-body">
+                                <div class="hero-prod-nombre"><?= $f[1] ?></div>
+                                <div class="hero-prod-precio"><?= $f[2] ?></div>
+                            </div>
+                        </div>
+                        <?php endforeach; endif; ?>
                     </div>
                 </div>
             </div>
@@ -292,82 +327,29 @@ $prod_destacados = $conn->query("SELECT p.*, c.nombre_categoria FROM producto p 
             <p class="sec-sub mx-auto">Encuentra exactamente lo que buscas entre nuestra amplia selección de equipos gaming</p>
         </div>
         <div class="cat-grid reveal">
-            <!-- Laptops -->
-            <div class="cat-card" onclick="window.location='views/auth/login.php'" style="grid-row:span 2;">
-                <div class="cat-bg" style="background:linear-gradient(135deg,#0a0f1e,#1a1040,#0d1f0d);"></div>
-                <div class="cat-overlay" style="background:linear-gradient(135deg,rgba(212,168,67,0.3),rgba(99,102,241,0.4));opacity:0.7;"></div>
-                <div style="position:absolute;inset:0;display:flex;flex-direction:column;justify-content:flex-end;padding:28px;z-index:2;">
-                    <div style="font-size:4rem;margin-bottom:12px;filter:drop-shadow(0 4px 12px rgba(0,0,0,0.5));"><i class="bi bi-laptop" style="color:#d4a843;"></i></div>
-                    <div style="font-family:'Rajdhani',sans-serif;font-size:1.8rem;font-weight:700;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,0.5);">Laptops Gamer</div>
-                    <div style="font-size:0.82rem;color:rgba(255,255,255,0.6);margin-top:4px;">RTX 4090 · i9 · 32GB RAM</div>
-                    <div style="display:inline-flex;align-items:center;gap:6px;margin-top:14px;background:rgba(212,168,67,0.15);border:1px solid rgba(212,168,67,0.3);border-radius:8px;padding:6px 14px;width:fit-content;font-size:0.78rem;color:var(--green);">Ver laptops <i class="bi bi-arrow-right"></i></div>
-                </div>
-            </div>
-            <!-- Monitores -->
+            <?php
+            $cats = [
+                ['icon'=>'bi-laptop',    'name'=>'Laptops Gamer',  'sub'=>'RTX 4090 · i9 · 32GB RAM',      'bg'=>'linear-gradient(135deg,#0a0f1e,#1a1040)', 'ov'=>'rgba(212,168,67,0.35),rgba(99,102,241,0.4)'],
+                ['icon'=>'bi-display',   'name'=>'Monitores',      'sub'=>'144Hz · 4K · IPS · HDR',         'bg'=>'linear-gradient(135deg,#0d1520,#1a2a3a)', 'ov'=>'rgba(59,130,246,0.4),rgba(99,102,241,0.3)'],
+                ['icon'=>'bi-mouse',     'name'=>'Mouse Gaming',   'sub'=>'25K DPI · RGB · Wireless',       'bg'=>'linear-gradient(135deg,#1a0d0d,#2a1020)', 'ov'=>'rgba(239,68,68,0.3),rgba(168,85,247,0.3)'],
+                ['icon'=>'bi-keyboard',  'name'=>'Teclados',       'sub'=>'Mecánicos · RGB · TKL',          'bg'=>'linear-gradient(135deg,#0d1a0d,#1a2a10)', 'ov'=>'rgba(212,168,67,0.3),rgba(245,158,11,0.2)'],
+                ['icon'=>'bi-controller','name'=>'Consolas',       'sub'=>'PS5 · Xbox Series X · Switch',   'bg'=>'linear-gradient(135deg,#10101a,#1a1040)', 'ov'=>'rgba(168,85,247,0.4),rgba(59,130,246,0.3)'],
+                ['icon'=>'bi-headset',   'name'=>'Accesorios',     'sub'=>'Headsets · Sillas · Mousepads',  'bg'=>'linear-gradient(135deg,#1a1200,#2a2010)', 'ov'=>'rgba(245,158,11,0.3),rgba(239,68,68,0.2)'],
+            ];
+            foreach ($cats as $c): ?>
             <div class="cat-card" onclick="window.location='views/auth/login.php'">
-                <div class="cat-bg" style="background:linear-gradient(135deg,#0d1520,#1a2a3a,#0a1520);"></div>
-                <div class="cat-overlay" style="background:linear-gradient(135deg,rgba(59,130,246,0.4),rgba(99,102,241,0.3));opacity:0.7;"></div>
-                <div style="position:absolute;inset:0;display:flex;align-items:flex-end;padding:20px;z-index:2;gap:12px;">
-                    <div style="font-size:2.5rem;filter:drop-shadow(0 2px 8px rgba(0,0,0,0.5));"><i class="bi bi-display" style="color:#d4a843;"></i></div>
-                    <div>
-                        <div style="font-family:'Rajdhani',sans-serif;font-size:1.3rem;font-weight:700;color:#fff;">Monitores</div>
-                        <div style="font-size:0.72rem;color:rgba(255,255,255,0.5);">144Hz · 4K · IPS</div>
-                    </div>
-                    <i class="bi bi-arrow-right-circle" style="margin-left:auto;color:rgba(255,255,255,0.4);font-size:1.2rem;"></i>
+                <div class="cat-bg" style="background:<?= $c['bg'] ?>;"></div>
+                <div class="cat-overlay" style="background:linear-gradient(135deg,<?= $c['ov'] ?>);opacity:0.75;"></div>
+                <div style="position:absolute;inset:0;display:flex;flex-direction:column;justify-content:flex-end;padding:22px;z-index:2;">
+                    <i class="bi <?= $c['icon'] ?>" style="font-size:2.4rem;color:#d4a843;margin-bottom:10px;filter:drop-shadow(0 2px 8px rgba(0,0,0,0.5));"></i>
+                    <div style="font-family:'Rajdhani',sans-serif;font-size:1.35rem;font-weight:700;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,0.5);"><?= $c['name'] ?></div>
+                    <div style="font-size:0.72rem;color:rgba(255,255,255,0.55);margin-top:3px;"><?= $c['sub'] ?></div>
+                </div>
+                <div style="position:absolute;top:14px;right:14px;z-index:3;width:30px;height:30px;background:rgba(0,0,0,0.35);backdrop-filter:blur(4px);border-radius:8px;display:flex;align-items:center;justify-content:center;">
+                    <i class="bi bi-arrow-right" style="color:rgba(255,255,255,0.5);font-size:0.85rem;"></i>
                 </div>
             </div>
-            <!-- Mouse -->
-            <div class="cat-card" onclick="window.location='views/auth/login.php'">
-                <div class="cat-bg" style="background:linear-gradient(135deg,#1a0d0d,#2a1020,#111111);"></div>
-                <div class="cat-overlay" style="background:linear-gradient(135deg,rgba(239,68,68,0.3),rgba(168,85,247,0.3));opacity:0.7;"></div>
-                <div style="position:absolute;inset:0;display:flex;align-items:flex-end;padding:20px;z-index:2;gap:12px;">
-                    <div style="font-size:2.5rem;filter:drop-shadow(0 2px 8px rgba(0,0,0,0.5));"><i class="bi bi-mouse" style="color:#d4a843;"></i></div>
-                    <div>
-                        <div style="font-family:'Rajdhani',sans-serif;font-size:1.3rem;font-weight:700;color:#fff;">Mouse Gaming</div>
-                        <div style="font-size:0.72rem;color:rgba(255,255,255,0.5);">25K DPI · RGB · Wireless</div>
-                    </div>
-                    <i class="bi bi-arrow-right-circle" style="margin-left:auto;color:rgba(255,255,255,0.4);font-size:1.2rem;"></i>
-                </div>
-            </div>
-            <!-- Teclados -->
-            <div class="cat-card" onclick="window.location='views/auth/login.php'">
-                <div class="cat-bg" style="background:linear-gradient(135deg,#0d1a0d,#1a2a10,#0a1a1a);"></div>
-                <div class="cat-overlay" style="background:linear-gradient(135deg,rgba(212,168,67,0.3),rgba(245,158,11,0.2));opacity:0.7;"></div>
-                <div style="position:absolute;inset:0;display:flex;align-items:flex-end;padding:20px;z-index:2;gap:12px;">
-                    <div style="font-size:2.5rem;filter:drop-shadow(0 2px 8px rgba(0,0,0,0.5));"><i class="bi bi-keyboard" style="color:#d4a843;"></i></div>
-                    <div>
-                        <div style="font-family:'Rajdhani',sans-serif;font-size:1.3rem;font-weight:700;color:#fff;">Teclados</div>
-                        <div style="font-size:0.72rem;color:rgba(255,255,255,0.5);">Mecánicos · RGB · TKL</div>
-                    </div>
-                    <i class="bi bi-arrow-right-circle" style="margin-left:auto;color:rgba(255,255,255,0.4);font-size:1.2rem;"></i>
-                </div>
-            </div>
-            <!-- Consolas -->
-            <div class="cat-card" onclick="window.location='views/auth/login.php'">
-                <div class="cat-bg" style="background:linear-gradient(135deg,#10101a,#1a1040,#0d0d20);"></div>
-                <div class="cat-overlay" style="background:linear-gradient(135deg,rgba(168,85,247,0.4),rgba(59,130,246,0.3));opacity:0.7;"></div>
-                <div style="position:absolute;inset:0;display:flex;align-items:flex-end;padding:20px;z-index:2;gap:12px;">
-                    <div style="font-size:2.5rem;filter:drop-shadow(0 2px 8px rgba(0,0,0,0.5));"><i class="bi bi-controller" style="color:#d4a843;"></i></div>
-                    <div>
-                        <div style="font-family:'Rajdhani',sans-serif;font-size:1.3rem;font-weight:700;color:#fff;">Consolas</div>
-                        <div style="font-size:0.72rem;color:rgba(255,255,255,0.5);">PS5 · Xbox · Switch</div>
-                    </div>
-                    <i class="bi bi-arrow-right-circle" style="margin-left:auto;color:rgba(255,255,255,0.4);font-size:1.2rem;"></i>
-                </div>
-            </div>
-            <!-- Accesorios -->
-            <div class="cat-card" onclick="window.location='views/auth/login.php'">
-                <div class="cat-bg" style="background:linear-gradient(135deg,#1a1200,#2a2010,#0a0a0a);"></div>
-                <div class="cat-overlay" style="background:linear-gradient(135deg,rgba(245,158,11,0.3),rgba(239,68,68,0.2));opacity:0.7;"></div>
-                <div style="position:absolute;inset:0;display:flex;align-items:flex-end;padding:20px;z-index:2;gap:12px;">
-                    <div style="font-size:2.5rem;filter:drop-shadow(0 2px 8px rgba(0,0,0,0.5));"><i class="bi bi-headset" style="color:#d4a843;"></i></div>
-                    <div>
-                        <div style="font-family:'Rajdhani',sans-serif;font-size:1.3rem;font-weight:700;color:#fff;">Accesorios</div>
-                        <div style="font-size:0.72rem;color:rgba(255,255,255,0.5);">Headsets · Sillas · Pads</div>
-                    </div>
-                    <i class="bi bi-arrow-right-circle" style="margin-left:auto;color:rgba(255,255,255,0.4);font-size:1.2rem;"></i>
-                </div>
-            </div>
+            <?php endforeach; ?>
         </div>
     </div>
 </section>

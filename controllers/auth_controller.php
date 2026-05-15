@@ -174,7 +174,7 @@ if ($action === 'verify_2fa') {
 // ═══════════════════════════════
 if ($action === 'logout') {
     session_destroy();
-    header('Location: ../../index.php');
+    header('Location: ../index.php');
     exit;
 }
 
