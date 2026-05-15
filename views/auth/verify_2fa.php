@@ -75,7 +75,6 @@ if (!isset($_SESSION['temp_user'])) {
             color: #fff;
         }
 
-        /* ICON */
         .shield-icon {
             width: 72px;
             height: 72px;
@@ -104,7 +103,6 @@ if (!isset($_SESSION['temp_user'])) {
             line-height: 1.5;
         }
 
-        /* CODE DISPLAY */
         .code-box {
             background: linear-gradient(135deg, rgba(0, 255, 136, 0.06), rgba(0, 204, 106, 0.03));
             border: 1px solid rgba(0, 255, 136, 0.2);
@@ -162,7 +160,6 @@ if (!isset($_SESSION['temp_user'])) {
             margin-top: 8px;
         }
 
-        /* INPUT */
         .input-section {
             margin-bottom: 20px;
         }
@@ -254,7 +251,6 @@ if (!isset($_SESSION['temp_user'])) {
             color: #00ff88;
         }
 
-        /* TIMER */
         .timer-row {
             display: flex;
             align-items: center;
@@ -288,7 +284,6 @@ if (!isset($_SESSION['temp_user'])) {
             color: #555;
         }
 
-        /* INFO */
         .info-row {
             display: flex;
             align-items: center;
@@ -318,7 +313,6 @@ if (!isset($_SESSION['temp_user'])) {
     <div class="auth-wrapper">
         <div class="auth-card">
             <div class="brand">Gamer<span>Zone</span></div>
-
             <div class="shield-icon">🔐</div>
             <h2 class="auth-title">Verificación en dos pasos</h2>
             <p class="auth-sub">Hola <strong
@@ -326,17 +320,14 @@ if (!isset($_SESSION['temp_user'])) {
                 código de seguridad generado para tu cuenta.</p>
 
             <?php if (isset($_SESSION['error'])): ?>
-                <div class="alert-err"><i class="bi bi-exclamation-circle-fill"></i><?= $_SESSION['error'];
-                unset($_SESSION['error']); ?>
+                <div class="alert-err"><i
+                        class="bi bi-exclamation-circle-fill"></i><?= $_SESSION['error'];
+                        unset($_SESSION['error']); ?>
                 </div>
             <?php endif; ?>
 
-
-
-
-            <!-- CÓDIGO: visible solo en modo demo -->
             <?php if ($_SESSION['usar_totp'] ?? false): ?>
-                <!-- MODO TOTP -->
+                <!-- MODO GOOGLE AUTHENTICATOR -->
                 <div class="code-box" style="background:rgba(59,130,246,0.06);border-color:rgba(59,130,246,0.2);">
                     <div class="code-label" style="color:#3b82f6;">Google Authenticator</div>
                     <div style="font-size:3rem;margin:12px 0;">📱</div>
@@ -344,8 +335,9 @@ if (!isset($_SESSION['temp_user'])) {
                             Bolivia</strong></div>
                     <div class="code-hint">El código cambia cada 30 segundos</div>
                 </div>
+
             <?php elseif (!($_SESSION['correo_enviado'] ?? false)): ?>
-                <!-- MODO DEMO -->
+                <!-- MODO DEMO: código visible en pantalla -->
                 <div class="code-box">
                     <div class="code-label">Tu código de acceso</div>
                     <div class="code-digits">
@@ -362,18 +354,9 @@ if (!isset($_SESSION['temp_user'])) {
                         <span class="timer-text">Código activo</span>
                     </div>
                 </div>
+
             <?php else: ?>
-            <!-- MODO CORREO -->
-            <div class="code-box" style="background:rgba(59,130,246,0.06);border-color:rgba(59,130,246,0.2);">
-                <div class="code-label" style="color:#3b82f6;">Código enviado al correo</div>
-                <div style="font-size:2rem;margin:12px 0;">📧</div>
-                <div style="font-size:0.875rem;color:#aaa;"><?= $_SESSION['msg_2fa'] ?? '' ?></div>
-                <div class="code-hint">Revisa tu bandeja de entrada y spam</div>
-            </div>
-            <?php endif; ?>
-
-
-
+                <!-- MODO CORREO ENVIADO -->
                 <div class="code-box" style="background:rgba(59,130,246,0.06);border-color:rgba(59,130,246,0.2);">
                     <div class="code-label" style="color:#3b82f6;">Código enviado al correo</div>
                     <div style="font-size:2rem;margin:12px 0;">📧</div>
@@ -396,8 +379,13 @@ if (!isset($_SESSION['temp_user'])) {
 
             <div class="info-row">
                 <i class="bi bi-info-circle"></i>
-                <span>El código se muestra en pantalla como método de verificación. En un sistema de producción se
-                    enviaría a tu correo.</span>
+                <span>
+                    <?php if ($_SESSION['usar_totp'] ?? false): ?>
+                        Usa el código de Google Authenticator que aparece en tu celular para esta cuenta.
+                    <?php else: ?>
+                        El código se muestra en pantalla como método de verificación. En producción se enviaría a tu correo.
+                    <?php endif; ?>
+                </span>
             </div>
 
             <div class="back-link">
@@ -407,7 +395,6 @@ if (!isset($_SESSION['temp_user'])) {
     </div>
 
     <script>
-        // Auto-formatear input
         document.querySelector('.code-input').addEventListener('input', function () {
             this.value = this.value.replace(/\D/g, '').slice(0, 6);
             if (this.value.length === 6) {
